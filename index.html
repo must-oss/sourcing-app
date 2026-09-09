@@ -203,7 +203,7 @@
     <!-- 탭2: 도매몰 소싱 -->
     <section id="tab-sourcing" hidden>
       <div class="hint">⚠️ 검색 전에 <b>이용할 도매몰에 먼저 로그인</b>하세요. 로그인된 브라우저를 그대로 사용하며 <b>비밀번호는 저장하지 않습니다.</b><br>
-        (실제 검색은 <b>크롬 확장 프로그램</b> 설치 후 동작합니다 — 현재 UI 준비 단계)</div>
+        검색·이미지 다운로드는 <b>크롬 확장 프로그램</b>이 있어야 동작합니다 → <a href="install.html" target="_blank"><b>확장 설치 안내 (처음이신가요?)</b></a></div>
       <div class="toolbar">
         <input type="search" id="srcKeyword" placeholder="소싱할 키워드 입력 (예: 콜라겐, 유산균)">
         <button class="seg" id="srcRun" style="background:var(--brand);color:#fff;border:0;border-radius:8px;padding:9px 18px;font-weight:600;cursor:pointer">검색</button>
@@ -215,7 +215,7 @@
         <label style="margin-right:14px"><input type="checkbox" class="srcMall" value="gonyb2b" checked> 건온연</label>
         <label style="margin-right:14px"><input type="checkbox" class="srcMall" value="msgood4u" checked> 엠에스굿포유</label>
       </div>
-      <div id="srcResults" class="placeholder">키워드를 입력하고 검색하면, 선택한 도매몰에서 <b>가격 낮은 순</b>으로 상품이 표시됩니다.<br><span style="font-size:12px">(크롬 확장 연동 후 활성화 — 다음 단계)</span></div>
+      <div id="srcResults" class="placeholder">키워드를 입력하고 검색하면, 선택한 도매몰에서 <b>가격 낮은 순</b>으로 상품이 표시됩니다.<br><span style="font-size:12px">각 상품의 📥 버튼으로 썸네일·상세 이미지를 한 번에 저장할 수 있습니다.</span></div>
     </section>
 
     <!-- 탭3: 이미지 생성 (OpenAI) -->
@@ -569,7 +569,7 @@ document.getElementById("srcRun").onclick=async()=>{
   const malls=[...document.querySelectorAll(".srcMall:checked")].map(c=>c.value);
   if(!kw){ box.innerHTML='<div class="placeholder">키워드를 입력하세요.</div>'; return; }
   if(!malls.length){ box.innerHTML='<div class="placeholder">도매몰을 하나 이상 선택하세요.</div>'; return; }
-  if(!extReady){ box.innerHTML='<div class="placeholder">🔧 크롬 확장이 연결되지 않았습니다.<br>확장 설치(크롬확장 폴더) 후 이 페이지를 새로고침하세요.</div>'; return; }
+  if(!extReady){ box.innerHTML='<div class="placeholder">🔧 크롬 확장이 연결되지 않았습니다.<br><a href="install.html" target="_blank"><b>확장 설치 안내 보기</b></a> → 설치 후 이 페이지를 새로고침(Ctrl+F5)하세요.</div>'; return; }
   box.innerHTML='<div class="placeholder">🔎 검색 중… 선택한 도매몰에 <b>로그인</b>돼 있어야 결과가 나옵니다. (숨김 탭이 잠깐 열렸다 닫혀요)</div>';
   handleSrcResult(await callExt({action:"search", keyword:kw, malls}));
 };
