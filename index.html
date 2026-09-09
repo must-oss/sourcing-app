@@ -128,6 +128,31 @@
     <input id="suEmail" type="email" autocomplete="email" placeholder="you@example.com">
     <label>비밀번호 (6자 이상)</label>
     <input id="suPassword" type="password" autocomplete="new-password" placeholder="비밀번호">
+
+    <div style="margin:16px 0 4px;border:1px solid var(--line);border-radius:8px;padding:12px 14px;background:var(--card)">
+      <label style="display:flex;align-items:flex-start;gap:8px;font-size:13.5px;cursor:pointer;margin:0">
+        <input type="checkbox" id="suPrivacy" style="margin-top:3px;flex:0 0 auto">
+        <span><b>[필수]</b> 개인정보 수집·이용에 동의합니다.</span>
+      </label>
+      <details style="margin-top:8px">
+        <summary style="cursor:pointer;font-size:12.5px;color:var(--brand2)">동의 내용 보기</summary>
+        <table style="width:100%;border-collapse:collapse;font-size:12.5px;line-height:1.7;margin-top:8px">
+          <tr><th style="border:1px solid var(--line);padding:6px 8px;background:#fff;width:88px;text-align:left">수집 항목</th>
+              <td style="border:1px solid var(--line);padding:6px 8px">이름, 연락처, 이메일 주소, 비밀번호(암호화 저장)</td></tr>
+          <tr><th style="border:1px solid var(--line);padding:6px 8px;background:#fff;text-align:left">이용 목적</th>
+              <td style="border:1px solid var(--line);padding:6px 8px">회원 식별 및 가입 승인, 서비스 제공, 이용 관련 안내</td></tr>
+          <tr><th style="border:1px solid var(--line);padding:6px 8px;background:#fff;text-align:left">보유 기간</th>
+              <td style="border:1px solid var(--line);padding:6px 8px">회원 탈퇴 또는 이용 종료 시까지 (관계 법령에 별도 보관 의무가 있는 경우 그 기간)</td></tr>
+          <tr><th style="border:1px solid var(--line);padding:6px 8px;background:#fff;text-align:left">제3자 제공</th>
+              <td style="border:1px solid var(--line);padding:6px 8px">제공하지 않습니다. 데이터는 서비스 운영을 위한 클라우드(Supabase)에 저장됩니다.</td></tr>
+        </table>
+        <div style="font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.7">
+          동의를 거부하실 수 있으나, 회원 식별이 불가능하여 <b>서비스 이용이 제한</b>됩니다.<br>
+          도매몰 아이디·비밀번호는 <b>수집하지 않으며</b>, 크롬 확장은 이미 로그인된 브라우저만 사용합니다.
+        </div>
+      </details>
+    </div>
+
     <button class="primary" id="btnSignup">가입 신청</button>
     <div class="switch">이미 계정이 있으신가요? <a id="toLogin">로그인</a></div>
   </div>
@@ -292,7 +317,7 @@
       <div class="tablewrap">
         <table id="memberTable">
           <thead><tr>
-            <th>이름</th><th>연락처</th><th>이메일</th><th class="c">상태</th><th class="c">신청일</th><th class="c">관리</th>
+            <th>이름</th><th>연락처</th><th>이메일</th><th class="c">개인정보<br>동의</th><th class="c">상태</th><th class="c">신청일</th><th class="c">관리</th>
           </tr></thead>
           <tbody></tbody>
         </table>
@@ -460,9 +485,9 @@ function showTab(name){
 // ---------- 관리자: 회원 승인 ----------
 async function loadMembers(){
   const tb=document.querySelector("#memberTable tbody");
-  tb.innerHTML=`<tr><td colspan="6" class="empty">불러오는 중…</td></tr>`;
+  tb.innerHTML=`<tr><td colspan="7" class="empty">불러오는 중…</td></tr>`;
   const {data,error}=await sb.from("members").select("*").order("created_at",{ascending:false});
-  if(error){ tb.innerHTML=`<tr><td colspan="6" class="empty">오류: ${esc(error.message)}</td></tr>`; return; }
+  if(error){ tb.innerHTML=`<tr><td colspan="7" class="empty">오류: ${esc(error.message)}</td></tr>`; return; }
   const rows=data||[];
   const pending=rows.filter(m=>m.status!=="approved").length;
   document.getElementById("memCount").textContent = `총 ${rows.length}명 · 대기 ${pending}명`;
@@ -474,9 +499,13 @@ async function loadMembers(){
       ? `<button data-act="revoke" data-id="${m.id}" style="border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 10px;cursor:pointer">승인취소</button>`
       : `<button data-act="approve" data-id="${m.id}" style="border:0;background:var(--brand);color:#fff;border-radius:6px;padding:4px 12px;cursor:pointer;font-weight:600">승인</button>`;
     const d = (m.created_at||"").slice(0,10);
+    const pv = m.privacy_agreed_at
+      ? `<span title="${esc(m.privacy_agreed_at)} (v${esc(m.privacy_version||"-")})" style="color:var(--accent);font-weight:600">동의</span>`
+      : `<span style="color:var(--muted)">-</span>`;
     return `<tr><td>${esc(m.name)}</td><td>${esc(m.phone)}</td><td>${esc(m.email)}</td>`
+      +`<td class="c">${pv}</td>`
       +`<td class="c">${badge}</td><td class="c">${esc(d)}</td><td class="c">${btn}</td></tr>`;
-  }).join("") : `<tr><td colspan="6" class="empty">가입 신청한 회원이 없습니다.</td></tr>`;
+  }).join("") : `<tr><td colspan="7" class="empty">가입 신청한 회원이 없습니다.</td></tr>`;
   tb.querySelectorAll("button[data-act]").forEach(b=>b.onclick=()=>setMemberStatus(b.dataset.id, b.dataset.act==="approve"?"approved":"pending"));
 }
 async function setMemberStatus(id, status){
@@ -785,6 +814,9 @@ function addResultCard(box, mod, b64, err, prompt, refined){
 }
 
 // ---------- 인증 ----------
+// 개인정보 처리방침 버전 — 동의 내용을 고치면 날짜를 올려서 재동의 이력을 구분한다.
+const PRIVACY_VERSION = "2026-09-09";
+
 // Supabase 인증 오류를 한국어 안내로 변환
 function krAuthError(err){
   const raw = (err && (err.message || String(err))) || "";
@@ -855,7 +887,12 @@ async function initAuth(){
     const email=document.getElementById("suEmail").value.trim();
     const password=document.getElementById("suPassword").value;
     if(!name || !phone){ authMsg("이름과 연락처를 입력해 주세요."); return; }
-    const {data,error}=await sb.auth.signUp({email,password,options:{data:{name,phone}}});
+    if(!document.getElementById("suPrivacy").checked){
+      authMsg("개인정보 수집·이용에 동의해 주세요. (필수)"); return; }
+    // 동의 기록: 가입 시각과 약관 버전을 계정 정보에 함께 저장한다(동의 증빙)
+    const privacy_agreed_at = new Date().toISOString();
+    const {data,error}=await sb.auth.signUp({email,password,
+      options:{data:{name,phone,privacy_agreed:true,privacy_agreed_at,privacy_version:PRIVACY_VERSION}}});
     if(error){ authMsg(krAuthError(error)); return; }
     if(data.session) await sb.auth.signOut();   // 승인 전이므로 자동 로그인 방지
     showAuthView("login");
