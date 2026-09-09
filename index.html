@@ -94,6 +94,23 @@
   #auth p.sub{color:var(--muted);margin:0 0 20px;font-size:13px}
   #auth label{display:block;font-size:13px;margin:12px 0 4px;color:#374151}
   #auth input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px}
+  /* 체크박스는 전역 width:100% 에서 제외 (안 하면 가로를 다 차지해 글자가 밀려남) */
+  #auth input[type=checkbox]{width:16px;height:16px;flex:0 0 16px;padding:0;margin:1px 0 0;
+    accent-color:var(--brand);cursor:pointer}
+  #auth .agree{margin:18px 0 0;border:1px solid var(--line);border-radius:10px;padding:13px 14px;background:#fff}
+  #auth .agree > label{display:flex;align-items:flex-start;gap:9px;margin:0;font-size:13.5px;
+    color:#111827;line-height:1.5;cursor:pointer}
+  #auth .agree > label b{color:var(--brand2)}
+  #auth .agree summary{cursor:pointer;font-size:12.5px;color:var(--brand2);margin-top:11px;list-style:none}
+  #auth .agree summary::-webkit-details-marker{display:none}
+  #auth .agree summary::before{content:"▸ ";}
+  #auth .agree details[open] summary::before{content:"▾ ";}
+  #auth .agree dl{margin:10px 0 0;font-size:12.5px;line-height:1.6}
+  #auth .agree dt{font-weight:700;color:#374151;margin-top:9px}
+  #auth .agree dt:first-child{margin-top:0}
+  #auth .agree dd{margin:2px 0 0;color:#4b5563;word-break:keep-all}
+  #auth .agree .note{margin-top:11px;padding-top:10px;border-top:1px solid var(--line);
+    font-size:12px;color:var(--muted);line-height:1.65;word-break:keep-all}
   #auth .primary{width:100%;margin-top:18px;background:var(--brand);color:#fff;border:0;border-radius:8px;
     padding:12px;font-size:15px;font-weight:600;cursor:pointer}
   #auth .primary:hover{background:#26457d}
@@ -129,24 +146,24 @@
     <label>비밀번호 (6자 이상)</label>
     <input id="suPassword" type="password" autocomplete="new-password" placeholder="비밀번호">
 
-    <div style="margin:16px 0 4px;border:1px solid var(--line);border-radius:8px;padding:12px 14px;background:var(--card)">
-      <label style="display:flex;align-items:flex-start;gap:8px;font-size:13.5px;cursor:pointer;margin:0">
-        <input type="checkbox" id="suPrivacy" style="margin-top:3px;flex:0 0 auto">
+    <div class="agree">
+      <label for="suPrivacy">
+        <input type="checkbox" id="suPrivacy">
         <span><b>[필수]</b> 개인정보 수집·이용에 동의합니다.</span>
       </label>
-      <details style="margin-top:8px">
-        <summary style="cursor:pointer;font-size:12.5px;color:var(--brand2)">동의 내용 보기</summary>
-        <table style="width:100%;border-collapse:collapse;font-size:12.5px;line-height:1.7;margin-top:8px">
-          <tr><th style="border:1px solid var(--line);padding:6px 8px;background:#fff;width:88px;text-align:left">수집 항목</th>
-              <td style="border:1px solid var(--line);padding:6px 8px">이름, 연락처, 이메일 주소, 비밀번호(암호화 저장)</td></tr>
-          <tr><th style="border:1px solid var(--line);padding:6px 8px;background:#fff;text-align:left">이용 목적</th>
-              <td style="border:1px solid var(--line);padding:6px 8px">회원 식별 및 가입 승인, 서비스 제공, 이용 관련 안내</td></tr>
-          <tr><th style="border:1px solid var(--line);padding:6px 8px;background:#fff;text-align:left">보유 기간</th>
-              <td style="border:1px solid var(--line);padding:6px 8px">회원 탈퇴 또는 이용 종료 시까지 (관계 법령에 별도 보관 의무가 있는 경우 그 기간)</td></tr>
-          <tr><th style="border:1px solid var(--line);padding:6px 8px;background:#fff;text-align:left">제3자 제공</th>
-              <td style="border:1px solid var(--line);padding:6px 8px">제공하지 않습니다. 데이터는 서비스 운영을 위한 클라우드(Supabase)에 저장됩니다.</td></tr>
-        </table>
-        <div style="font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.7">
+      <details>
+        <summary>동의 내용 보기</summary>
+        <dl>
+          <dt>수집 항목</dt>
+          <dd>이름, 연락처, 이메일 주소, 비밀번호(암호화 저장)</dd>
+          <dt>이용 목적</dt>
+          <dd>회원 식별 및 가입 승인, 서비스 제공, 이용 관련 안내</dd>
+          <dt>보유 기간</dt>
+          <dd>회원 탈퇴 또는 이용 종료 시까지 (관계 법령에 보관 의무가 있는 경우 그 기간)</dd>
+          <dt>제3자 제공</dt>
+          <dd>제공하지 않습니다. 데이터는 서비스 운영을 위한 클라우드(Supabase)에 저장됩니다.</dd>
+        </dl>
+        <div class="note">
           동의를 거부하실 수 있으나, 회원 식별이 불가능하여 <b>서비스 이용이 제한</b>됩니다.<br>
           도매몰 아이디·비밀번호는 <b>수집하지 않으며</b>, 크롬 확장은 이미 로그인된 브라우저만 사용합니다.
         </div>
