@@ -433,9 +433,9 @@ async function startApp(userLabel, isAdmin){
   renderMeta(); fillFilters(); renderSchedule(); renderKeywords();
 }
 
-// 이미지 생성 탭 사용 여부 — true 로 바꾸면 탭이 다시 보입니다.
-// (gpt-image-1 이 한글 텍스트 레이아웃 합성에 약해 실사용 품질 미달 → 2026-09-09 비활성화)
-const SHOW_IMAGE_TAB = false;
+// 이미지 생성 탭 사용 여부 — false 로 바꾸면 탭이 숨겨집니다.
+// (gpt-image-1 이 한글 텍스트 레이아웃 합성에 약해 ②③④ 품질은 아직 실사용 미달)
+const SHOW_IMAGE_TAB = true;
 if(SHOW_IMAGE_TAB) document.getElementById("tabImage").hidden = false;
 
 // 탭 전환
