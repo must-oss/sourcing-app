@@ -140,7 +140,8 @@
     <label>이름</label>
     <input id="suName" type="text" autocomplete="name" placeholder="홍길동">
     <label>연락처</label>
-    <input id="suPhone" type="tel" autocomplete="tel" placeholder="010-0000-0000">
+    <input id="suPhone" type="tel" autocomplete="tel" inputmode="numeric" maxlength="13"
+           placeholder="010-0000-0000">
     <label>이메일</label>
     <input id="suEmail" type="email" autocomplete="email" placeholder="you@example.com">
     <label>비밀번호 (6자 이상)</label>
@@ -837,6 +838,34 @@ function addResultCard(box, mod, b64, err, prompt, refined){
 // 개인정보 처리방침 버전 — 동의 내용을 고치면 날짜를 올려서 재동의 이력을 구분한다.
 const PRIVACY_VERSION = "2026-09-09";
 
+// ── 연락처 자동 하이픈 (숫자만 입력해도 010-1234-5678 형태로) ──
+function formatPhone(v){
+  const d = String(v||"").replace(/\D/g, "").slice(0, 11);
+  if(d.startsWith("02")){                       // 서울 지역번호(2자리)
+    if(d.length < 3)  return d;
+    if(d.length < 7)  return d.slice(0,2)+"-"+d.slice(2);
+    if(d.length < 10) return d.slice(0,2)+"-"+d.slice(2,5)+"-"+d.slice(5,9);
+    return d.slice(0,2)+"-"+d.slice(2,6)+"-"+d.slice(6,10);
+  }
+  if(d.length < 4)  return d;                   // 휴대폰·그 외 지역번호(3자리)
+  if(d.length < 8)  return d.slice(0,3)+"-"+d.slice(3);
+  if(d.length < 11) return d.slice(0,3)+"-"+d.slice(3,6)+"-"+d.slice(6,10);
+  return d.slice(0,3)+"-"+d.slice(3,7)+"-"+d.slice(7,11);
+}
+// 휴대폰(01X) 또는 유선(02 / 0XX) 형식
+const PHONE_RE = /^(01[016789]-\d{3,4}-\d{4}|02-\d{3,4}-\d{4}|0[3-6]\d-\d{3,4}-\d{4})$/;
+function bindPhoneInput(el){
+  if(!el) return;
+  el.addEventListener("input", ()=>{
+    const atEnd = el.selectionStart === el.value.length;   // 중간 수정 중엔 커서를 건드리지 않음
+    const out = formatPhone(el.value);
+    if(out !== el.value){
+      el.value = out;
+      if(atEnd) el.setSelectionRange(out.length, out.length);
+    }
+  });
+}
+
 // Supabase 인증 오류를 한국어 안내로 변환
 function krAuthError(err){
   const raw = (err && (err.message || String(err))) || "";
@@ -872,9 +901,15 @@ function showAuthView(v){ // 'login' | 'signup' | 'pending'
 }
 
 // 로그인/세션 후 승인 상태 확인 → 승인이면 앱, 아니면 대기 화면
-async function afterAuth(user){
+async function afterAuth(user, retried){
   const {data,error}=await sb.from("members").select("status,name,role").eq("id",user.id).maybeSingle();
-  if(error){ authMsg("상태 조회 오류: "+error.message); return; }
+  if(error){
+    // 일시적 네트워크 오류로 자동 로그인이 풀리지 않도록 한 번 더 시도
+    if(!retried){ await new Promise(r=>setTimeout(r,900)); return afterAuth(user, true); }
+    showAuthView("login");
+    authMsg("접속이 원활하지 않습니다. 잠시 후 새로고침해 주세요. ("+error.message+")");
+    return;
+  }
   const isAdmin = data && data.role==="admin";
   if(data && (data.status==="approved" || isAdmin)){ startApp(data.name ? data.name+" 님" : user.email, isAdmin); }
   else {
@@ -887,13 +922,31 @@ async function afterAuth(user){
 
 async function initAuth(){
   if(!CONFIGURED){ startApp("미리보기 모드"); return; } // 미리보기: 로그인 없이 바로
-  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  const { data:{ session } } = await sb.auth.getSession();
+  // 자동 로그인: 세션을 브라우저에 보관하고 만료 전에 토큰을 스스로 갱신한다.
+  // (로그아웃을 누르거나 브라우저 데이터를 지우기 전까지 로그인 상태가 유지됨)
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: false,
+      storage: window.localStorage,
+      // storageKey 는 기본값 유지 — 바꾸면 이미 로그인된 회원이 전부 로그아웃된다
+    },
+  });
+
+  // 만료된 토큰이 갱신되면 조용히 이어서 사용 (재로그인 요구 방지)
+  sb.auth.onAuthStateChange((event, s)=>{
+    if(event === "SIGNED_OUT"){ showAuthView("login"); }
+  });
+
+  const { data:{ session }, error:sessErr } = await sb.auth.getSession();
+  if(sessErr){ console.warn("세션 복원 실패:", sessErr.message); }
   if(session){ afterAuth(session.user); }
   else { showAuthView("login"); }
 
   document.getElementById("toSignup").onclick=()=>showAuthView("signup");
   document.getElementById("toLogin").onclick=()=>showAuthView("login");
+  bindPhoneInput(document.getElementById("suPhone"));
 
   document.getElementById("btnLogin").onclick=async()=>{
     const email=document.getElementById("email").value, password=document.getElementById("password").value;
@@ -907,6 +960,8 @@ async function initAuth(){
     const email=document.getElementById("suEmail").value.trim();
     const password=document.getElementById("suPassword").value;
     if(!name || !phone){ authMsg("이름과 연락처를 입력해 주세요."); return; }
+    if(!PHONE_RE.test(phone)){
+      authMsg("연락처를 올바르게 입력해 주세요. (예: 010-1234-5678)"); return; }
     if(!document.getElementById("suPrivacy").checked){
       authMsg("개인정보 수집·이용에 동의해 주세요. (필수)"); return; }
     // 동의 기록: 가입 시각과 약관 버전을 계정 정보에 함께 저장한다(동의 증빙)
