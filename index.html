@@ -58,6 +58,9 @@
   .kwhead .sortable{cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:4px}
   .kwhead .sortable:hover{color:var(--brand)}
   .kwhead .sortable.active{color:var(--brand)}
+  th.sortable{cursor:pointer;user-select:none;white-space:nowrap}
+  th.sortable:hover{color:var(--brand)}
+  th.sortable.active{color:var(--brand)}
   .kwhead .num,.kw>summary .num{justify-content:flex-end;text-align:right}
   .arrow{font-size:15px;color:#9aa1ac;font-weight:700;line-height:1}
   .sortable.active .arrow{color:var(--brand)}
@@ -385,15 +388,6 @@
         <input type="number" id="cpRest" value="3" min="0" max="30" style="width:60px">
         <label style="font-size:13px;color:var(--muted)">분 휴식<span class="qmark" data-tip="일정 개수마다 길게 쉬어 차단 위험을 줄입니다. 0을 넣으면 휴식 없이 계속 돕니다.">?</span></label>
         <label style="font-size:13px;margin-left:10px"><input type="checkbox" id="cpResume" checked> 이어서 하기<span class="qmark" data-tip="이미 수집한 키워드는 건너뜁니다. 중간에 멈췄다가 다시 눌러도 처음부터 다시 돌지 않습니다.">?</span></label>
-      </div>
-      <div class="toolbar">
-        <label style="font-size:13px;color:var(--muted)">정렬</label>
-        <select id="cpSort">
-          <option value="ratio">고유율 낮은 순 (장악 심한 순)</option>
-          <option value="unique">실제 상품 적은 순</option>
-          <option value="search">검색수 많은 순</option>
-          <option value="rocket">로켓 비율 낮은 순</option>
-        </select>
       </div>
       <div class="toolbar">
         <button id="cpRun" style="border:0;background:var(--brand);color:#fff;border-radius:8px;padding:10px 22px;cursor:pointer;font-weight:700">분석 시작</button>
@@ -791,16 +785,48 @@ function groupProducts(items){
 }
 
 function cpRatio(r){ return r.collected ? r.unique/r.collected : 1; }
+
+// 표 컬럼 정의 — 헤더를 누르면 ↑↓ 로 정렬이 바뀐다
+const CP_COLS = [
+  {k:"kw",        t:"키워드",   w:null, align:"left"},
+  {k:"search",    t:"검색수",   w:86,  align:"right", desc:true},
+  {k:"comp",      t:"경쟁강도", w:64},
+  {k:"slots",     t:"상위칸",   w:52,  dim:true},
+  {k:"ads",       t:"광고",     w:48},
+  {k:"collected", t:"분석대상", w:62},
+  {k:"unique",    t:"실제상품", w:70},
+  {k:"ratio",     t:"고유율",   w:60},
+  {k:"maxDup",    t:"최대중복", w:66,  desc:true},
+  {k:"rocketPct", t:"로켓",     w:56,  dim:true},
+];
+let cpSort = {key:"ratio", asc:true};   // 기본: 고유율 낮은 순 (장악 심한 순)
+
+function cpVal(r, key){
+  if(key==="kw")        return r.kw||"";
+  if(key==="ratio")     return r.collected ? r.unique/r.collected*100 : null;
+  if(key==="rocketPct") return r.collected ? r.rocket/r.collected*100 : null;
+  const v=r[key];
+  return (v===undefined||v===null||v==="") ? null : v;
+}
 function cpSortRows(rows){
-  const how=(document.getElementById("cpSort")||{}).value||"ratio";
   const ok=rows.filter(r=>!r.error), bad=rows.filter(r=>r.error);
+  const {key, asc}=cpSort, sign=asc?1:-1;
   ok.sort((a,b)=>{
-    if(how==="unique") return (a.unique-b.unique) || (cpRatio(a)-cpRatio(b));
-    if(how==="search") return (b.search||0)-(a.search||0);
-    if(how==="rocket") return ((a.rocket/(a.collected||1))-(b.rocket/(b.collected||1))) || (cpRatio(a)-cpRatio(b));
-    return (cpRatio(a)-cpRatio(b)) || (a.unique-b.unique);   // 기본: 고유율 낮은 순
+    const x=cpVal(a,key), y=cpVal(b,key);
+    if(x===null && y===null) return 0;
+    if(x===null) return 1;          // 값 없는 행은 방향과 무관하게 뒤로
+    if(y===null) return -1;
+    let c;
+    if(typeof x==="string" || typeof y==="string") c=String(x).localeCompare(String(y),"ko");
+    else c=x-y;
+    return c*sign || (cpRatio(a)-cpRatio(b));   // 동점이면 고유율로
   });
-  return ok.concat(bad);
+  return ok.concat(bad);              // 오류 행은 항상 맨 아래
+}
+function cpSetSort(key){
+  if(cpSort.key===key) cpSort.asc = !cpSort.asc;
+  else { const col=CP_COLS.find(c=>c.k===key); cpSort = {key, asc: !(col && col.desc)}; }
+  cpRender();
 }
 
 function cpRender(){
@@ -828,23 +854,23 @@ function cpRender(){
       +`<td class="c" style="color:var(--muted)">${rk}%</td>`
       +`</tr>`;
   }).join("");
+  const th = CP_COLS.map(c=>{
+    const active = cpSort.key===c.k;
+    const arrow  = active ? (cpSort.asc?"↑":"↓") : "↕";
+    const style  = (c.w?`width:${c.w}px;`:"") + (c.align==="right"?"text-align:right;":"");
+    const cls    = "sortable"+(active?" active":"")+(c.align?"":" c");
+    return `<th class="${cls}" style="${style}" data-cpsort="${c.k}">${c.t} <span class="arrow">${arrow}</span></th>`;
+  }).join("");
   box.innerHTML=`<div class="tablewrap"><table><thead><tr>
-      <th style="width:42px" class="c">#</th><th>키워드</th>
-      <th style="width:86px;text-align:right">검색수</th>
-      <th style="width:64px" class="c">경쟁강도</th>
-      <th style="width:52px" class="c">상위칸</th>
-      <th style="width:48px" class="c">광고</th>
-      <th style="width:62px" class="c">분석대상</th>
-      <th style="width:70px" class="c">실제상품</th>
-      <th style="width:60px" class="c">고유율</th>
-      <th style="width:66px" class="c">최대중복</th>
-      <th style="width:56px" class="c">로켓</th>
+      <th style="width:42px" class="c">#</th>${th}
     </tr></thead><tbody>${tr}</tbody></table></div>
     <div style="font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.75">
+      열 제목을 누르면 <b>낮은 순 ↔ 높은 순</b>으로 정렬됩니다.<br>
       <b>고유율</b> = 실제상품 ÷ 분석대상. <b>낮을수록 소수가 그 키워드를 장악</b>하고 있다는 뜻입니다 (40% 이하 강조).<br>
       <b>상위칸</b> 중 <b>광고</b>를 뺀 것이 <b>분석대상</b>입니다 · <b>최대중복</b> = 한 상품이 차지한 최대 칸 수<br>
       <b>로켓</b> 비율이 높으면 쿠팡 직매입 상품과 직접 경쟁해야 한다는 신호입니다.
     </div>`;
+  box.querySelectorAll("th[data-cpsort]").forEach(h=>h.onclick=()=>cpSetSort(h.dataset.cpsort));
 }
 
 // ── 키워드 파일 읽기 ──
@@ -1051,7 +1077,6 @@ document.getElementById("cpCsv").onclick=()=>{
   a.click(); URL.revokeObjectURL(a.href);
 };
 
-document.getElementById("cpSort").onchange=cpRender;
 cpLoadSaved(); cpRender();
 
 // ---------- 이미지 생성 (OpenAI · 회원 각자 키) ----------
