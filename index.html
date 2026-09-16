@@ -811,7 +811,8 @@ function groupProducts(items){
     unique:groups.length,                                  // 실제 상품 수
     maxDup:groups[0]||0,                                   // 한 상품이 차지한 최대 칸수
     dup:n-groups.length,                                   // 중복으로 낭비된 칸수
-    rocket:items.filter(x=>x.rocket).length,
+    rocket:items.filter(x=>x.rocket).length,               // 쿠팡 물류(로켓배송·프레시·도착보장)
+    rocketOwn:items.filter(x=>x.rocketOwn).length,         // 그중 판매자로켓
   };
 }
 
@@ -887,7 +888,7 @@ function cpRender(){
       +`<td class="c">${r.unique}</td>`
       +`<td class="c" style="${hot}">${ratio}%</td>`
       +`<td class="c">${r.maxDup}</td>`
-      +`<td class="c" style="color:var(--muted)">${rk}%</td>`
+      +`<td class="c" style="color:var(--muted)" title="${r.rocket||0}개 중 판매자로켓 ${r.rocketOwn||0}개">${rk}%</td>`
       +`<td class="c" style="color:var(--muted)">${esc(cpShortDate(r.at))}</td>`
       +`</tr>`;
   }).join("");
@@ -1179,13 +1180,13 @@ document.getElementById("cpCsv").onclick=()=>{
   if(!rows.length){ alert("저장할 결과가 없습니다."); return; }
   const sorted=cpSortRows(rows);
   const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
-  const head=["키워드","총검색수","경쟁강도","상위칸","광고수","분석대상","실제상품수","고유율(%)","최대중복","로켓수","로켓비율(%)","수집일시","출처파일","오류"];
+  const head=["키워드","총검색수","경쟁강도","상위칸","광고수","분석대상","실제상품수","고유율(%)","최대중복","로켓수","로켓비율(%)","판매자로켓수","수집일시","오류"];
   const csv=[head.join(",")].concat(sorted.map(r=>[
     q(r.kw), r.search??"", r.comp??"",
     r.slots??"", r.ads??"", r.collected??"", r.unique??"",
     (r.collected?Math.round(r.unique/r.collected*100):""), r.maxDup??"",
-    r.rocket??"", (r.collected?Math.round(r.rocket/r.collected*100):""),
-    q(r.at?String(r.at).slice(0,16).replace("T"," "):""), q(r.src),
+    r.rocket??"", (r.collected?Math.round(r.rocket/r.collected*100):""), r.rocketOwn??"",
+    q(r.at?String(r.at).slice(0,16).replace("T"," "):""),
     r.error?q(r.error):""
   ].join(","))).join("\r\n");
   const blob=new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8"});
