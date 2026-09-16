@@ -340,14 +340,33 @@
 
       <div class="toolbar">
         <label style="font-size:13px;color:var(--muted)">키워드 파일</label>
-        <input type="file" id="cpFile" accept=".json,.txt,.csv">
+        <input type="file" id="cpFile" accept=".xlsx,.xls,.csv,.json,.txt" multiple>
         <span class="count" id="cpLoaded">불러온 키워드 없음</span>
+      </div>
+      <div class="toolbar" style="margin-bottom:2px">
+        <label style="font-size:13px;color:var(--muted)">총 검색수 ≥</label>
+        <input type="number" id="cpMinSearch" value="5000" min="0" step="500" style="width:90px">
+        <label style="font-size:13px;color:var(--muted)">· 경쟁강도 ≤</label>
+        <input type="number" id="cpMaxComp" value="0.5" min="0" max="99" step="0.05" style="width:78px">
+        <label style="font-size:13px;color:var(--muted)">· 상품수 ≤</label>
+        <input type="number" id="cpMaxProd" placeholder="제한없음" min="0" step="1000" style="width:100px">
+        <span class="qmark" data-tip="아이템스카우트 엑셀을 그대로 올리면 이 조건으로 앱이 직접 걸러냅니다. 빈칸은 조건 없음이고, 값을 바꾸면 즉시 다시 계산됩니다.">?</span>
+      </div>
+      <div class="toolbar" style="margin-bottom:10px">
+        <label style="font-size:13px;color:var(--muted)">쇼핑성 지수 ≥</label>
+        <input type="number" id="cpMinShop" placeholder="제한없음" min="0" max="100" style="width:100px">
+        <label style="font-size:13px"><input type="checkbox" id="cpShopOnly"> 쇼핑성 키워드만<span class="qmark" data-tip="'키워드 분류'가 정보성인 키워드를 제외합니다. 정보성은 검색은 많아도 구매로 이어지지 않는 경우가 많습니다.">?</span></label>
+        <label style="font-size:13px;color:var(--muted)">· 카테고리 포함</label>
+        <input type="text" id="cpCat" placeholder="예: 건강식품" style="width:150px">
+        <span class="count" id="cpFilterInfo"></span>
       </div>
       <details style="margin:0 0 12px">
         <summary style="cursor:pointer;color:var(--brand2);font-size:13px">직접 붙여넣기 / 키워드 파일 만드는 법</summary>
         <div style="background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px;margin-top:8px;font-size:13px;line-height:1.8">
-          <b>keywords.json</b> 은 <code>쿠팡 키워드 경쟁분석\filter_keywords.py</code> 를 실행하면 만들어집니다
-          (검색수·경쟁강도 조건으로 걸러진 목록).<br>
+          <b>아이템스카우트에서 받은 엑셀을 그대로</b> 올리면 됩니다. 여러 개를 한 번에 선택해도 되고,
+          겹치는 키워드는 자동으로 하나로 합칩니다.<br>
+          <b>키워드</b> 열을 찾아 읽고, <b>총검색수·경쟁강도</b> 열이 있으면 위 조건으로 걸러냅니다.
+          (조건 값을 바꾸면 다시 불러올 필요 없이 즉시 반영됩니다)<br>
           아래 칸에 한 줄에 하나씩 직접 붙여넣어도 됩니다.
           <textarea id="cpPaste" placeholder="젖산마그네슘&#10;멜라토닌&#10;크레아틴" style="width:100%;height:90px;margin-top:8px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-family:inherit"></textarea>
           <button id="cpUsePaste" style="margin-top:8px;border:1px solid var(--brand);background:#fff;color:var(--brand);border-radius:8px;padding:7px 14px;cursor:pointer;font-weight:600">이 목록 사용</button>
@@ -827,28 +846,131 @@ function cpRender(){
     </div>`;
 }
 
+// ── 키워드 파일 읽기 ──
+// 아이템스카우트 엑셀을 그대로 받아, 화면의 조건으로 앱이 직접 걸러낸다.
+let cpRaw = [];   // 파일에서 읽은 원본 행 (필터 적용 전)
+
 function cpSetKeywords(list){
   cpKeywords = list;
   document.getElementById("cpLoaded").textContent = `키워드 ${list.length}개 준비됨`;
 }
+const cpNorm = s => String(s==null?"":s).replace(/\s+/g,"").toLowerCase();
+function cpNum(v){
+  if(v===null||v===undefined||v==="") return null;
+  const n=parseFloat(String(v).replace(/,/g,"").replace(/[^\d.\-]/g,""));
+  return isNaN(n)?null:n;
+}
+// 엑셀 읽기 도구(SheetJS)는 필요할 때만 불러온다
+function cpEnsureXLSX(){
+  if(window.XLSX) return Promise.resolve(true);
+  return new Promise(res=>{
+    const s=document.createElement("script");
+    s.src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+    s.onload=()=>res(!!window.XLSX); s.onerror=()=>res(false);
+    document.head.appendChild(s);
+  });
+}
+function cpCol(hdr, names){
+  for(let i=0;i<hdr.length;i++){ const h=cpNorm(hdr[i]); if(names.some(n=>h===cpNorm(n))) return i; }
+  for(let i=0;i<hdr.length;i++){ const h=cpNorm(hdr[i]); if(h && names.some(n=>h.includes(cpNorm(n)))) return i; }
+  return -1;
+}
+async function cpParseExcel(file){
+  if(!(await cpEnsureXLSX())) throw new Error("엑셀 읽기 도구를 불러오지 못했습니다. 인터넷 연결을 확인하세요.");
+  const wb=XLSX.read(await file.arrayBuffer(),{type:"array"});
+  const ws=wb.Sheets[wb.SheetNames[0]];
+  const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:""});
+  let hi=aoa.findIndex(r=>Array.isArray(r)&&r.some(c=>cpNorm(c)==="키워드"));
+  if(hi<0) hi=0;
+  const hdr=aoa[hi]||[];
+  const iKw=cpCol(hdr,["키워드"]);
+  if(iKw<0) throw new Error(`'${file.name}' 에서 '키워드' 열을 찾지 못했습니다.`);
+  const iS=cpCol(hdr,["총검색수","검색수"]), iC=cpCol(hdr,["경쟁강도"]),
+        iP=cpCol(hdr,["상품수"]), iSh=cpCol(hdr,["쇼핑성지수"]),
+        iCl=cpCol(hdr,["키워드분류"]), iCa=cpCol(hdr,["대표카테고리","카테고리"]);
+  const out=[];
+  for(let r=hi+1;r<aoa.length;r++){
+    const row=aoa[r]||[];
+    const kw=String(row[iKw]==null?"":row[iKw]).trim();
+    if(!kw || cpNorm(kw)==="키워드") continue;
+    out.push({ kw,
+      search: iS<0?null:cpNum(row[iS]),
+      comp:   iC<0?null:cpNum(row[iC]),
+      prod:   iP<0?null:cpNum(row[iP]),
+      shop:   iSh<0?null:cpNum(row[iSh]),
+      cls:    iCl<0?"":String(row[iCl]||""),
+      cat:    iCa<0?"":String(row[iCa]||""),
+    });
+  }
+  return out;
+}
+// 화면의 조건으로 cpRaw 를 걸러 cpKeywords 를 만든다
+function cpApplyFilter(){
+  const info=document.getElementById("cpFilterInfo");
+  if(!cpRaw.length){ info.textContent=""; return; }
+  const minS=cpNum(document.getElementById("cpMinSearch").value);
+  const maxC=cpNum(document.getElementById("cpMaxComp").value);
+  const maxP=cpNum(document.getElementById("cpMaxProd").value);
+  const minSh=cpNum(document.getElementById("cpMinShop").value);
+  const shopOnly=document.getElementById("cpShopOnly").checked;
+  const cat=document.getElementById("cpCat").value.trim();
+
+  const keep={};
+  for(const r of cpRaw){
+    if(minS!=null && (r.search==null || r.search < minS)) continue;
+    if(maxC!=null && (r.comp==null   || r.comp   > maxC)) continue;
+    if(maxP!=null && (r.prod==null   || r.prod   > maxP)) continue;
+    if(minSh!=null&& (r.shop==null   || r.shop   < minSh)) continue;
+    if(shopOnly && !/쇼핑/.test(r.cls)) continue;
+    if(cat && !r.cat.includes(cat)) continue;
+    const prev=keep[r.kw];                      // 파일 간 중복은 검색수 큰 쪽
+    if(!prev || (r.search||0) > (prev.search||0)) keep[r.kw]=r;
+  }
+  const list=Object.values(keep).sort((a,b)=>(b.search||0)-(a.search||0));
+  cpSetKeywords(list.map(r=>({kw:r.kw, search:r.search, comp:r.comp})));
+  const mins=Math.round(list.length*7/60);
+  info.textContent=`원본 ${cpRaw.length}행 → ${list.length}개 통과 (예상 ${mins<1?1:mins}분)`;
+}
 
 document.getElementById("cpFile").onchange = async (e)=>{
-  const f=e.target.files[0]; if(!f) return;
-  const txt=await f.text();
-  let list=[];
+  const files=Array.from(e.target.files||[]); if(!files.length) return;
+  const loaded=document.getElementById("cpLoaded");
+  loaded.textContent="읽는 중…";
   try{
-    const j=JSON.parse(txt);
-    const meta=j.meta||{};
-    list=(j.keywords||[]).map(k=>({kw:k, search:(meta[k]||{}).search, comp:(meta[k]||{}).comp}));
+    let rows=[];
+    for(const f of files){
+      if(/\.(xlsx|xls)$/i.test(f.name)){
+        rows=rows.concat(await cpParseExcel(f));
+      }else{
+        const txt=await f.text();
+        try{                                     // keywords.json 형식도 계속 지원
+          const j=JSON.parse(txt); const meta=j.meta||{};
+          rows=rows.concat((j.keywords||[]).map(k=>({kw:k,
+            search:(meta[k]||{}).search, comp:(meta[k]||{}).comp, prod:null, shop:null, cls:"", cat:""})));
+        }catch(_){                               // 한 줄에 하나씩
+          rows=rows.concat(txt.split(/\r?\n/).map(s=>s.split(",")[0].trim()).filter(Boolean)
+            .filter(s=>cpNorm(s)!=="키워드")
+            .map(k=>({kw:k, search:null, comp:null, prod:null, shop:null, cls:"", cat:""})));
+        }
+      }
+    }
+    cpRaw=rows;
+    cpApplyFilter();
+    if(!cpKeywords.length) alert("조건을 통과한 키워드가 없습니다. 검색수·경쟁강도 값을 확인해 보세요.");
   }catch(err){
-    list=txt.split(/\r?\n/).map(s=>s.trim()).filter(Boolean).map(k=>({kw:k}));
+    loaded.textContent="불러오기 실패";
+    alert(err.message||String(err));
   }
-  cpSetKeywords(list);
 };
+["cpMinSearch","cpMaxComp","cpMaxProd","cpMinShop","cpShopOnly","cpCat"].forEach(id=>{
+  const el=document.getElementById(id);
+  el.addEventListener(el.type==="checkbox"?"change":"input", cpApplyFilter);
+});
 document.getElementById("cpUsePaste").onclick=()=>{
-  const list=document.getElementById("cpPaste").value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean).map(k=>({kw:k}));
+  const list=document.getElementById("cpPaste").value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
   if(!list.length){ alert("붙여넣은 키워드가 없습니다."); return; }
-  cpSetKeywords(list);
+  cpRaw=[]; document.getElementById("cpFilterInfo").textContent="";
+  cpSetKeywords(list.map(k=>({kw:k})));          // 직접 입력은 조건 적용 없이 그대로
 };
 document.getElementById("cpClear").onclick=()=>{
   if(!confirm("수집한 결과를 모두 지웁니다. 계속할까요?")) return;
