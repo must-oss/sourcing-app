@@ -356,11 +356,24 @@
 
       <div class="toolbar">
         <label style="font-size:13px;color:var(--muted)">상위</label>
-        <input type="number" id="cpTopN" value="28" min="5" max="60" style="width:70px">
-        <label style="font-size:13px;color:var(--muted)">개 · 간격</label>
-        <input type="number" id="cpDelay" value="3" min="1" max="30" style="width:70px">
-        <label style="font-size:13px;color:var(--muted)">초</label>
+        <input type="number" id="cpTopN" value="28" min="5" max="60" style="width:66px">
+        <label style="font-size:13px;color:var(--muted)">칸<span class="qmark" data-tip="검색결과 상위 몇 칸을 볼지. 이 안에서 광고를 뺀 나머지가 분석 대상이 됩니다.">?</span> · 간격</label>
+        <input type="number" id="cpDelay" value="6" min="2" max="30" style="width:66px">
+        <label style="font-size:13px;color:var(--muted)">초<span class="qmark" data-tip="실제로는 이 값의 ±40% 범위에서 매번 다르게 쉽니다. 정확히 일정한 간격은 그 자체로 봇 신호라 일부러 흔듭니다.">?</span> ·</label>
+        <input type="number" id="cpBatch" value="50" min="0" max="500" style="width:66px">
+        <label style="font-size:13px;color:var(--muted)">개마다</label>
+        <input type="number" id="cpRest" value="3" min="0" max="30" style="width:60px">
+        <label style="font-size:13px;color:var(--muted)">분 휴식<span class="qmark" data-tip="일정 개수마다 길게 쉬어 차단 위험을 줄입니다. 0을 넣으면 휴식 없이 계속 돕니다.">?</span></label>
         <label style="font-size:13px;margin-left:10px"><input type="checkbox" id="cpResume" checked> 이어서 하기<span class="qmark" data-tip="이미 수집한 키워드는 건너뜁니다. 중간에 멈췄다가 다시 눌러도 처음부터 다시 돌지 않습니다.">?</span></label>
+      </div>
+      <div class="toolbar">
+        <label style="font-size:13px;color:var(--muted)">정렬</label>
+        <select id="cpSort">
+          <option value="ratio">고유율 낮은 순 (장악 심한 순)</option>
+          <option value="unique">실제 상품 적은 순</option>
+          <option value="search">검색수 많은 순</option>
+          <option value="rocket">로켓 비율 낮은 순</option>
+        </select>
       </div>
       <div class="toolbar">
         <button id="cpRun" style="border:0;background:var(--brand);color:#fff;border-radius:8px;padding:10px 22px;cursor:pointer;font-weight:700">분석 시작</button>
@@ -751,40 +764,60 @@ function groupProducts(items){
   };
 }
 
+function cpRatio(r){ return r.collected ? r.unique/r.collected : 1; }
+function cpSortRows(rows){
+  const how=(document.getElementById("cpSort")||{}).value||"ratio";
+  const ok=rows.filter(r=>!r.error), bad=rows.filter(r=>r.error);
+  ok.sort((a,b)=>{
+    if(how==="unique") return (a.unique-b.unique) || (cpRatio(a)-cpRatio(b));
+    if(how==="search") return (b.search||0)-(a.search||0);
+    if(how==="rocket") return ((a.rocket/(a.collected||1))-(b.rocket/(b.collected||1))) || (cpRatio(a)-cpRatio(b));
+    return (cpRatio(a)-cpRatio(b)) || (a.unique-b.unique);   // 기본: 고유율 낮은 순
+  });
+  return ok.concat(bad);
+}
+
 function cpRender(){
   const box=document.getElementById("cpResults");
-  const rows=Object.values(cpResults);
-  if(!rows.length){ box.innerHTML='<div class="placeholder">아직 결과가 없습니다.</div>'; return; }
-  // 중복 많은 순 = 실제 상품 수 적은 순
-  rows.sort((a,b)=> (a.unique-b.unique) || (b.maxDup-a.maxDup) || (b.search-a.search));
+  const all=Object.values(cpResults);
+  if(!all.length){ box.innerHTML='<div class="placeholder">아직 결과가 없습니다.</div>'; return; }
+  const rows=cpSortRows(all);
   const tr=rows.map((r,i)=>{
     if(r.error) return `<tr><td class="c">${i+1}</td><td>${esc(r.kw)}</td>`
-      +`<td colspan="6" style="color:var(--warn)">${esc(r.error)}</td></tr>`;
-    const ratio = r.collected ? Math.round(r.unique/r.collected*100) : 0;
-    const strong = r.unique<=10 ? "font-weight:700;color:#b45309" : "";
+      +`<td colspan="9" style="color:var(--warn)">${esc(r.error)}</td></tr>`;
+    const ratio = Math.round(cpRatio(r)*100);
+    const rk    = r.collected ? Math.round(r.rocket/r.collected*100) : 0;
+    const hot   = ratio<=40 ? "font-weight:700;color:#b45309" : "";
     return `<tr>`
       +`<td class="c">${i+1}</td>`
       +`<td>${esc(r.kw)}</td>`
       +`<td style="text-align:right;font-variant-numeric:tabular-nums">${r.search?Number(r.search).toLocaleString():"-"}</td>`
       +`<td class="c">${r.comp!=null?r.comp:"-"}</td>`
+      +`<td class="c" style="color:var(--muted)">${r.slots??"-"}</td>`
+      +`<td class="c">${r.ads??"-"}</td>`
       +`<td class="c">${r.collected}</td>`
-      +`<td class="c" style="${strong}">${r.unique}</td>`
+      +`<td class="c">${r.unique}</td>`
+      +`<td class="c" style="${hot}">${ratio}%</td>`
       +`<td class="c">${r.maxDup}</td>`
-      +`<td class="c">${ratio}%</td>`
+      +`<td class="c" style="color:var(--muted)">${rk}%</td>`
       +`</tr>`;
   }).join("");
   box.innerHTML=`<div class="tablewrap"><table><thead><tr>
-      <th style="width:44px" class="c">#</th><th>키워드</th>
-      <th style="width:90px;text-align:right">검색수</th>
-      <th style="width:70px" class="c">경쟁강도</th>
-      <th style="width:70px" class="c">수집</th>
-      <th style="width:90px" class="c">실제 상품</th>
-      <th style="width:80px" class="c">최대중복</th>
-      <th style="width:70px" class="c">고유율</th>
+      <th style="width:42px" class="c">#</th><th>키워드</th>
+      <th style="width:86px;text-align:right">검색수</th>
+      <th style="width:64px" class="c">경쟁강도</th>
+      <th style="width:52px" class="c">상위칸</th>
+      <th style="width:48px" class="c">광고</th>
+      <th style="width:62px" class="c">분석대상</th>
+      <th style="width:70px" class="c">실제상품</th>
+      <th style="width:60px" class="c">고유율</th>
+      <th style="width:66px" class="c">최대중복</th>
+      <th style="width:56px" class="c">로켓</th>
     </tr></thead><tbody>${tr}</tbody></table></div>
-    <div style="font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.7">
-      <b>실제 상품</b>이 적을수록 소수가 그 키워드를 장악하고 있다는 뜻입니다 (10개 이하는 강조 표시).<br>
-      <b>최대중복</b> = 한 상품이 상위 노출에서 차지한 칸 수 · <b>고유율</b> = 실제 상품 ÷ 수집 개수
+    <div style="font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.75">
+      <b>고유율</b> = 실제상품 ÷ 분석대상. <b>낮을수록 소수가 그 키워드를 장악</b>하고 있다는 뜻입니다 (40% 이하 강조).<br>
+      <b>상위칸</b> 중 <b>광고</b>를 뺀 것이 <b>분석대상</b>입니다 · <b>최대중복</b> = 한 상품이 차지한 최대 칸 수<br>
+      <b>로켓</b> 비율이 높으면 쿠팡 직매입 상품과 직접 경쟁해야 한다는 신호입니다.
     </div>`;
 }
 
@@ -823,8 +856,12 @@ document.getElementById("cpRun").onclick=async()=>{
   if(!cpKeywords.length){ alert("먼저 키워드를 불러오세요."); return; }
   if(!extReady){ alert("크롬 확장이 연결되지 않았습니다.\n확장 설치 후 이 페이지를 새로고침(Ctrl+F5)하세요."); return; }
   const topN=parseInt(document.getElementById("cpTopN").value,10)||28;
-  const delay=(parseInt(document.getElementById("cpDelay").value,10)||3)*1000;
+  const baseDelay=(parseInt(document.getElementById("cpDelay").value,10)||6)*1000;
+  const batchN=parseInt(document.getElementById("cpBatch").value,10)||0;
+  const restMs=(parseInt(document.getElementById("cpRest").value,10)||0)*60*1000;
   const resume=document.getElementById("cpResume").checked;
+  // 정확히 일정한 간격은 그 자체로 봇 신호 → 매번 ±40% 흔든다
+  const jitter=()=>Math.round(baseDelay*(0.6+Math.random()*0.8));
   const todo=cpKeywords.filter(k=>!(resume && cpResults[k.kw] && !cpResults[k.kw].error));
   if(!todo.length){ alert("이미 모두 수집했습니다. (이어서 하기를 끄면 다시 수집합니다)"); return; }
 
@@ -838,13 +875,24 @@ document.getElementById("cpRun").onclick=async()=>{
     const d=await callExt({action:"coupang", keyword:k.kw, topN});
     if(d && d.ok){
       cpResults[k.kw]=Object.assign({kw:k.kw, search:k.search, comp:k.comp,
-        totalCards:d.totalCards, ads:d.ads}, groupProducts(d.items||[]));
+        totalCards:d.totalCards, slots:d.slots, ads:d.ads}, groupProducts(d.items||[]));
     }else{
       cpResults[k.kw]={kw:k.kw, search:k.search, comp:k.comp, error:(d&&d.error)||"실패"};
       if(d && d.blocked){ blocked=true; break; }
     }
     cpSave(); cpRender();
-    if(!cpAbort) await new Promise(r=>setTimeout(r, delay));
+    if(cpAbort) break;
+    // 묶음 휴식 (마지막 키워드 뒤에는 쉬지 않음)
+    if(batchN && restMs && done % batchN === 0 && done < todo.length){
+      const until=Date.now()+restMs;
+      while(Date.now()<until && !cpAbort){
+        const left=Math.ceil((until-Date.now())/1000);
+        st.textContent=`😴 ${batchN}개 처리 후 휴식 중… ${Math.floor(left/60)}분 ${left%60}초 남음 (${done}/${todo.length})`;
+        await new Promise(r=>setTimeout(r,1000));
+      }
+    }else{
+      await new Promise(r=>setTimeout(r, jitter()));
+    }
   }
   cpRunning=false;
   document.getElementById("cpRun").disabled=false;
@@ -857,12 +905,13 @@ document.getElementById("cpRun").onclick=async()=>{
 document.getElementById("cpCsv").onclick=()=>{
   const rows=Object.values(cpResults);
   if(!rows.length){ alert("저장할 결과가 없습니다."); return; }
-  rows.sort((a,b)=> (a.unique-b.unique) || (b.maxDup-a.maxDup));
-  const head=["키워드","총검색수","경쟁강도","수집개수","실제상품수","최대중복","고유율(%)","광고제외수","로켓수","오류"];
-  const csv=[head.join(",")].concat(rows.map(r=>[
+  const sorted=cpSortRows(rows);
+  const head=["키워드","총검색수","경쟁강도","상위칸","광고수","분석대상","실제상품수","고유율(%)","최대중복","로켓수","로켓비율(%)","오류"];
+  const csv=[head.join(",")].concat(sorted.map(r=>[
     `"${String(r.kw).replace(/"/g,'""')}"`, r.search??"", r.comp??"",
-    r.collected??"", r.unique??"", r.maxDup??"",
-    (r.collected?Math.round(r.unique/r.collected*100):""), r.ads??"", r.rocket??"",
+    r.slots??"", r.ads??"", r.collected??"", r.unique??"",
+    (r.collected?Math.round(r.unique/r.collected*100):""), r.maxDup??"",
+    r.rocket??"", (r.collected?Math.round(r.rocket/r.collected*100):""),
     r.error?`"${String(r.error).replace(/"/g,'""')}"`:""
   ].join(","))).join("\r\n");
   const blob=new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8"});
@@ -872,6 +921,7 @@ document.getElementById("cpCsv").onclick=()=>{
   a.click(); URL.revokeObjectURL(a.href);
 };
 
+document.getElementById("cpSort").onchange=cpRender;
 cpLoadSaved(); cpRender();
 
 // ---------- 이미지 생성 (OpenAI · 회원 각자 키) ----------
