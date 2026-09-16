@@ -202,7 +202,8 @@
     <button class="active" data-tab="hsmoa">홈쇼핑 키워드</button>
     <button data-tab="sourcing">도매몰 소싱</button>
     <button data-tab="image" id="tabImage" hidden>이미지 생성</button>
-    <button data-tab="admin" id="tabAdmin" hidden style="margin-left:auto">👤 관리자</button>
+    <button data-tab="coupang" id="tabCoupang" hidden style="margin-left:auto">📊 쿠팡 분석</button>
+    <button data-tab="admin" id="tabAdmin" hidden>👤 관리자</button>
   </nav>
   <main>
     <!-- 탭1: 홈쇼핑 키워드 -->
@@ -329,6 +330,46 @@
           ⚠️ 생각보다 API 비용이 비싸고 이미지 퀄리티가 좋지 않아 사용을 권장하지 않습니다.
         </div>
       </div>
+    </section>
+
+    <!-- 탭: 쿠팡 키워드 경쟁분석 (관리자 전용) -->
+    <section id="tab-coupang" hidden>
+      <div class="hint">키워드별로 쿠팡 검색 상위 <b>28개(광고 제외)</b>를 모아 <b>실제 상품이 몇 개인지</b> 셉니다.
+        같은 상품의 옵션이 여러 칸을 차지할수록 <b>소수가 키워드를 장악</b>하고 있다는 뜻입니다.<br>
+        ⚠️ 쿠팡은 자동 접근을 제한합니다. <b>간격을 넉넉히</b> 두고, 한 번에 50개 정도씩 나눠 돌리세요. 차단이 감지되면 자동으로 멈춥니다.</div>
+
+      <div class="toolbar">
+        <label style="font-size:13px;color:var(--muted)">키워드 파일</label>
+        <input type="file" id="cpFile" accept=".json,.txt,.csv">
+        <span class="count" id="cpLoaded">불러온 키워드 없음</span>
+      </div>
+      <details style="margin:0 0 12px">
+        <summary style="cursor:pointer;color:var(--brand2);font-size:13px">직접 붙여넣기 / 키워드 파일 만드는 법</summary>
+        <div style="background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px;margin-top:8px;font-size:13px;line-height:1.8">
+          <b>keywords.json</b> 은 <code>쿠팡 키워드 경쟁분석\filter_keywords.py</code> 를 실행하면 만들어집니다
+          (검색수·경쟁강도 조건으로 걸러진 목록).<br>
+          아래 칸에 한 줄에 하나씩 직접 붙여넣어도 됩니다.
+          <textarea id="cpPaste" placeholder="젖산마그네슘&#10;멜라토닌&#10;크레아틴" style="width:100%;height:90px;margin-top:8px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-family:inherit"></textarea>
+          <button id="cpUsePaste" style="margin-top:8px;border:1px solid var(--brand);background:#fff;color:var(--brand);border-radius:8px;padding:7px 14px;cursor:pointer;font-weight:600">이 목록 사용</button>
+        </div>
+      </details>
+
+      <div class="toolbar">
+        <label style="font-size:13px;color:var(--muted)">상위</label>
+        <input type="number" id="cpTopN" value="28" min="5" max="60" style="width:70px">
+        <label style="font-size:13px;color:var(--muted)">개 · 간격</label>
+        <input type="number" id="cpDelay" value="3" min="1" max="30" style="width:70px">
+        <label style="font-size:13px;color:var(--muted)">초</label>
+        <label style="font-size:13px;margin-left:10px"><input type="checkbox" id="cpResume" checked> 이어서 하기<span class="qmark" data-tip="이미 수집한 키워드는 건너뜁니다. 중간에 멈췄다가 다시 눌러도 처음부터 다시 돌지 않습니다.">?</span></label>
+      </div>
+      <div class="toolbar">
+        <button id="cpRun" style="border:0;background:var(--brand);color:#fff;border-radius:8px;padding:10px 22px;cursor:pointer;font-weight:700">분석 시작</button>
+        <button id="cpStop" disabled style="border:1px solid var(--line);background:#fff;border-radius:8px;padding:10px 18px;cursor:pointer">중지</button>
+        <button id="cpCsv" style="border:1px solid var(--brand);background:#fff;color:var(--brand);border-radius:8px;padding:10px 16px;cursor:pointer;font-weight:600">CSV 저장</button>
+        <button id="cpClear" style="border:1px solid var(--line);background:#fff;border-radius:8px;padding:10px 14px;cursor:pointer">결과 지우기</button>
+        <span class="count" id="cpStatus"></span>
+      </div>
+      <div id="cpResults" class="placeholder">키워드를 불러오고 <b>분석 시작</b>을 누르세요.</div>
     </section>
 
     <!-- 탭: 관리자 (승인) -->
@@ -485,7 +526,8 @@ async function startApp(userLabel, isAdmin){
   document.getElementById("auth").classList.add("hidden");
   document.getElementById("app").classList.remove("hidden");
   document.getElementById("who").textContent = userLabel||"";
-  document.getElementById("tabAdmin").hidden = !isAdmin;   // 관리자만 관리자 탭
+  document.getElementById("tabAdmin").hidden = !isAdmin;     // 관리자만 관리자 탭
+  document.getElementById("tabCoupang").hidden = !isAdmin;   // 쿠팡 분석도 관리자 전용
   DATA = await loadData();
   renderMeta(); fillFilters(); renderSchedule(); renderKeywords();
 }
@@ -497,7 +539,7 @@ if(SHOW_IMAGE_TAB) document.getElementById("tabImage").hidden = false;
 
 // 탭 전환
 function showTab(name){
-  ["hsmoa","sourcing","image","admin"].forEach(t=>{
+  ["hsmoa","sourcing","image","coupang","admin"].forEach(t=>{
     const s=document.getElementById("tab-"+t); if(s) s.hidden = (t!==name);
   });
   document.querySelectorAll("nav.tabs button[data-tab]").forEach(x=>
@@ -667,6 +709,170 @@ document.querySelectorAll("nav.tabs button[data-tab]").forEach(b=>b.onclick=()=>
   if(b.disabled) return;
   showTab(b.dataset.tab);
 });
+
+// ---------- 쿠팡 키워드 경쟁분석 (관리자 전용) ----------
+// 한 키워드의 상위 N개(광고 제외) 카드를 '실제 상품' 단위로 묶는다.
+//   ① 같은 상품ID(pid)        → 같은 상품의 다른 옵션
+//   ② 같은 썸네일 이미지       → 같은 공급처 사진을 쓰는 다른 리스팅
+//   ③ 같은 상품명 본체(첫 쉼표 앞) → 옵션마다 이미지가 다른 경우
+// 셋 중 하나라도 걸리면 한 덩어리로 본다(연결 요소 찾기).
+const CP_KEY = "coupang_scan_v1";
+let cpKeywords = [];      // [{kw, search, comp}]
+let cpResults  = {};      // kw -> 집계결과
+let cpRunning  = false, cpAbort = false;
+
+function cpLoadSaved(){
+  try{ const s=JSON.parse(localStorage.getItem(CP_KEY)||"{}"); cpResults = s.results||{}; }catch(e){ cpResults={}; }
+}
+function cpSave(){
+  try{ localStorage.setItem(CP_KEY, JSON.stringify({savedAt:new Date().toISOString(), results:cpResults})); }catch(e){}
+}
+
+function groupProducts(items){
+  const n = items.length;
+  const parent = Array.from({length:n}, (_,i)=>i);
+  const find = a => { while(parent[a]!==a){ parent[a]=parent[parent[a]]; a=parent[a]; } return a; };
+  const uni  = (a,b)=>{ a=find(a); b=find(b); if(a!==b) parent[b]=a; };
+  const byPid={}, byImg={}, byName={};
+  items.forEach((it,i)=>{
+    if(it.pid){ if(byPid[it.pid]!==undefined) uni(byPid[it.pid], i); else byPid[it.pid]=i; }
+    if(it.img){ if(byImg[it.img]!==undefined) uni(byImg[it.img], i); else byImg[it.img]=i; }
+    if(it.nk && it.nk.length>=4){ if(byName[it.nk]!==undefined) uni(byName[it.nk], i); else byName[it.nk]=i; }
+  });
+  const size={};
+  for(let i=0;i<n;i++){ const r=find(i); size[r]=(size[r]||0)+1; }
+  const groups=Object.values(size).sort((a,b)=>b-a);
+  return {
+    collected:n,
+    unique:groups.length,                                  // 실제 상품 수
+    maxDup:groups[0]||0,                                   // 한 상품이 차지한 최대 칸수
+    dup:n-groups.length,                                   // 중복으로 낭비된 칸수
+    rocket:items.filter(x=>x.rocket).length,
+  };
+}
+
+function cpRender(){
+  const box=document.getElementById("cpResults");
+  const rows=Object.values(cpResults);
+  if(!rows.length){ box.innerHTML='<div class="placeholder">아직 결과가 없습니다.</div>'; return; }
+  // 중복 많은 순 = 실제 상품 수 적은 순
+  rows.sort((a,b)=> (a.unique-b.unique) || (b.maxDup-a.maxDup) || (b.search-a.search));
+  const tr=rows.map((r,i)=>{
+    if(r.error) return `<tr><td class="c">${i+1}</td><td>${esc(r.kw)}</td>`
+      +`<td colspan="6" style="color:var(--warn)">${esc(r.error)}</td></tr>`;
+    const ratio = r.collected ? Math.round(r.unique/r.collected*100) : 0;
+    const strong = r.unique<=10 ? "font-weight:700;color:#b45309" : "";
+    return `<tr>`
+      +`<td class="c">${i+1}</td>`
+      +`<td>${esc(r.kw)}</td>`
+      +`<td style="text-align:right;font-variant-numeric:tabular-nums">${r.search?Number(r.search).toLocaleString():"-"}</td>`
+      +`<td class="c">${r.comp!=null?r.comp:"-"}</td>`
+      +`<td class="c">${r.collected}</td>`
+      +`<td class="c" style="${strong}">${r.unique}</td>`
+      +`<td class="c">${r.maxDup}</td>`
+      +`<td class="c">${ratio}%</td>`
+      +`</tr>`;
+  }).join("");
+  box.innerHTML=`<div class="tablewrap"><table><thead><tr>
+      <th style="width:44px" class="c">#</th><th>키워드</th>
+      <th style="width:90px;text-align:right">검색수</th>
+      <th style="width:70px" class="c">경쟁강도</th>
+      <th style="width:70px" class="c">수집</th>
+      <th style="width:90px" class="c">실제 상품</th>
+      <th style="width:80px" class="c">최대중복</th>
+      <th style="width:70px" class="c">고유율</th>
+    </tr></thead><tbody>${tr}</tbody></table></div>
+    <div style="font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.7">
+      <b>실제 상품</b>이 적을수록 소수가 그 키워드를 장악하고 있다는 뜻입니다 (10개 이하는 강조 표시).<br>
+      <b>최대중복</b> = 한 상품이 상위 노출에서 차지한 칸 수 · <b>고유율</b> = 실제 상품 ÷ 수집 개수
+    </div>`;
+}
+
+function cpSetKeywords(list){
+  cpKeywords = list;
+  document.getElementById("cpLoaded").textContent = `키워드 ${list.length}개 준비됨`;
+}
+
+document.getElementById("cpFile").onchange = async (e)=>{
+  const f=e.target.files[0]; if(!f) return;
+  const txt=await f.text();
+  let list=[];
+  try{
+    const j=JSON.parse(txt);
+    const meta=j.meta||{};
+    list=(j.keywords||[]).map(k=>({kw:k, search:(meta[k]||{}).search, comp:(meta[k]||{}).comp}));
+  }catch(err){
+    list=txt.split(/\r?\n/).map(s=>s.trim()).filter(Boolean).map(k=>({kw:k}));
+  }
+  cpSetKeywords(list);
+};
+document.getElementById("cpUsePaste").onclick=()=>{
+  const list=document.getElementById("cpPaste").value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean).map(k=>({kw:k}));
+  if(!list.length){ alert("붙여넣은 키워드가 없습니다."); return; }
+  cpSetKeywords(list);
+};
+document.getElementById("cpClear").onclick=()=>{
+  if(!confirm("수집한 결과를 모두 지웁니다. 계속할까요?")) return;
+  cpResults={}; cpSave(); cpRender();
+};
+document.getElementById("cpStop").onclick=()=>{ cpAbort=true; };
+
+document.getElementById("cpRun").onclick=async()=>{
+  if(cpRunning) return;
+  const st=document.getElementById("cpStatus");
+  if(!cpKeywords.length){ alert("먼저 키워드를 불러오세요."); return; }
+  if(!extReady){ alert("크롬 확장이 연결되지 않았습니다.\n확장 설치 후 이 페이지를 새로고침(Ctrl+F5)하세요."); return; }
+  const topN=parseInt(document.getElementById("cpTopN").value,10)||28;
+  const delay=(parseInt(document.getElementById("cpDelay").value,10)||3)*1000;
+  const resume=document.getElementById("cpResume").checked;
+  const todo=cpKeywords.filter(k=>!(resume && cpResults[k.kw] && !cpResults[k.kw].error));
+  if(!todo.length){ alert("이미 모두 수집했습니다. (이어서 하기를 끄면 다시 수집합니다)"); return; }
+
+  cpRunning=true; cpAbort=false;
+  document.getElementById("cpRun").disabled=true;
+  document.getElementById("cpStop").disabled=false;
+  let done=0, blocked=false;
+  for(const k of todo){
+    if(cpAbort) break;
+    st.textContent=`수집 중… ${++done}/${todo.length}  ·  ${k.kw}`;
+    const d=await callExt({action:"coupang", keyword:k.kw, topN});
+    if(d && d.ok){
+      cpResults[k.kw]=Object.assign({kw:k.kw, search:k.search, comp:k.comp,
+        totalCards:d.totalCards, ads:d.ads}, groupProducts(d.items||[]));
+    }else{
+      cpResults[k.kw]={kw:k.kw, search:k.search, comp:k.comp, error:(d&&d.error)||"실패"};
+      if(d && d.blocked){ blocked=true; break; }
+    }
+    cpSave(); cpRender();
+    if(!cpAbort) await new Promise(r=>setTimeout(r, delay));
+  }
+  cpRunning=false;
+  document.getElementById("cpRun").disabled=false;
+  document.getElementById("cpStop").disabled=true;
+  st.textContent = blocked ? "⛔ 쿠팡 차단 감지 — 중단했습니다. 잠시(10~30분) 뒤 '이어서 하기'로 재개하세요."
+                 : cpAbort ? `중지됨 (${done}개 처리)` : `완료 (${done}개 처리)`;
+  cpRender();
+};
+
+document.getElementById("cpCsv").onclick=()=>{
+  const rows=Object.values(cpResults);
+  if(!rows.length){ alert("저장할 결과가 없습니다."); return; }
+  rows.sort((a,b)=> (a.unique-b.unique) || (b.maxDup-a.maxDup));
+  const head=["키워드","총검색수","경쟁강도","수집개수","실제상품수","최대중복","고유율(%)","광고제외수","로켓수","오류"];
+  const csv=[head.join(",")].concat(rows.map(r=>[
+    `"${String(r.kw).replace(/"/g,'""')}"`, r.search??"", r.comp??"",
+    r.collected??"", r.unique??"", r.maxDup??"",
+    (r.collected?Math.round(r.unique/r.collected*100):""), r.ads??"", r.rocket??"",
+    r.error?`"${String(r.error).replace(/"/g,'""')}"`:""
+  ].join(","))).join("\r\n");
+  const blob=new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=`쿠팡_키워드경쟁분석_${new Date().toISOString().slice(0,10).replace(/-/g,"")}.csv`;
+  a.click(); URL.revokeObjectURL(a.href);
+};
+
+cpLoadSaved(); cpRender();
 
 // ---------- 이미지 생성 (OpenAI · 회원 각자 키) ----------
 const OA_KEY = "oa_api_key";
