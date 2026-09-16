@@ -387,13 +387,18 @@
         <label style="font-size:13px;color:var(--muted)">개마다</label>
         <input type="number" id="cpRest" value="3" min="0" max="30" style="width:60px">
         <label style="font-size:13px;color:var(--muted)">분 휴식<span class="qmark" data-tip="일정 개수마다 길게 쉬어 차단 위험을 줄입니다. 0을 넣으면 휴식 없이 계속 돕니다.">?</span></label>
-        <label style="font-size:13px;margin-left:10px"><input type="checkbox" id="cpResume" checked> 이어서 하기<span class="qmark" data-tip="이미 수집한 키워드는 건너뜁니다. 중간에 멈췄다가 다시 눌러도 처음부터 다시 돌지 않습니다.">?</span></label>
+        <label style="font-size:13px;margin-left:10px"><input type="checkbox" id="cpResume" checked> 이어서 하기<span class="qmark" data-tip="이미 수집한 키워드는 건너뜁니다. 파일이 달라도 키워드 이름 기준으로 건너뛰며, 오류 났던 키워드는 다시 시도합니다.">?</span></label>
+        <label style="font-size:13px;color:var(--muted)">·</label>
+        <input type="number" id="cpStale" value="7" min="0" max="365" style="width:60px">
+        <label style="font-size:13px;color:var(--muted)">일 지난 건 다시<span class="qmark" data-tip="쿠팡 상위 노출은 계속 바뀝니다. 이 일수보다 오래된 결과는 '이어서 하기' 중이어도 다시 수집합니다. 0을 넣으면 오래돼도 건너뜁니다.">?</span></label>
       </div>
       <div class="toolbar">
         <button id="cpRun" style="border:0;background:var(--brand);color:#fff;border-radius:8px;padding:10px 22px;cursor:pointer;font-weight:700">분석 시작</button>
         <button id="cpStop" disabled style="border:1px solid var(--line);background:#fff;border-radius:8px;padding:10px 18px;cursor:pointer">중지</button>
         <button id="cpCsv" style="border:1px solid var(--brand);background:#fff;color:var(--brand);border-radius:8px;padding:10px 16px;cursor:pointer;font-weight:600">CSV 저장</button>
         <button id="cpClear" style="border:1px solid var(--line);background:#fff;border-radius:8px;padding:10px 14px;cursor:pointer">결과 지우기</button>
+        <label style="font-size:13px;color:var(--muted);margin-left:6px">보기</label>
+        <select id="cpSrcFilter"><option value="">모든 파일</option></select>
         <span class="count" id="cpStatus"></span>
       </div>
       <div id="cpResults" class="placeholder">키워드를 불러오고 <b>분석 시작</b>을 누르세요.</div>
@@ -798,11 +803,16 @@ const CP_COLS = [
   {k:"ratio",     t:"고유율",   w:60},
   {k:"maxDup",    t:"최대중복", w:66,  desc:true},
   {k:"rocketPct", t:"로켓",     w:56,  dim:true},
+  {k:"at",        t:"수집일",   w:62,  dim:true, desc:true},
+  {k:"src",       t:"출처",     w:110, align:"left", dim:true},
 ];
+const cpShortDate = s => s ? String(s).slice(5,10).replace("-","/") : "";
 let cpSort = {key:"ratio", asc:true};   // 기본: 고유율 낮은 순 (장악 심한 순)
 
 function cpVal(r, key){
   if(key==="kw")        return r.kw||"";
+  if(key==="src")       return r.src||"";
+  if(key==="at")        return r.at||"";
   if(key==="ratio")     return r.collected ? r.unique/r.collected*100 : null;
   if(key==="rocketPct") return r.collected ? r.rocket/r.collected*100 : null;
   const v=r[key];
@@ -829,14 +839,30 @@ function cpSetSort(key){
   cpRender();
 }
 
+// 출처 파일 목록을 드롭다운에 채운다(선택값은 유지)
+function cpFillSrcFilter(){
+  const sel=document.getElementById("cpSrcFilter"); if(!sel) return;
+  const cur=sel.value;
+  const srcs=[...new Set(Object.values(cpResults).map(r=>r.src).filter(Boolean))].sort();
+  sel.innerHTML=`<option value="">모든 파일</option>`+
+    srcs.map(s=>`<option value="${esc(s)}">${esc(s.length>28?s.slice(0,26)+"…":s)}</option>`).join("");
+  sel.value = srcs.includes(cur) ? cur : "";
+}
+
 function cpRender(){
   const box=document.getElementById("cpResults");
-  const all=Object.values(cpResults);
-  if(!all.length){ box.innerHTML='<div class="placeholder">아직 결과가 없습니다.</div>'; return; }
+  let all=Object.values(cpResults);
+  if(!all.length){ box.innerHTML='<div class="placeholder">아직 결과가 없습니다.</div>'; cpFillSrcFilter(); return; }
+  cpFillSrcFilter();
+  const only=(document.getElementById("cpSrcFilter")||{}).value||"";
+  if(only) all=all.filter(r=>r.src===only);
+  if(!all.length){ box.innerHTML='<div class="placeholder">이 파일의 결과가 없습니다.</div>'; return; }
   const rows=cpSortRows(all);
   const tr=rows.map((r,i)=>{
     if(r.error) return `<tr><td class="c">${i+1}</td><td>${esc(r.kw)}</td>`
-      +`<td colspan="9" style="color:var(--warn)">${esc(r.error)}</td></tr>`;
+      +`<td colspan="9" style="color:var(--warn)">${esc(r.error)}</td>`
+      +`<td class="c" style="color:var(--muted)">${esc(cpShortDate(r.at))}</td>`
+      +`<td style="color:var(--muted);font-size:12px">${esc(r.src||"")}</td></tr>`;
     const ratio = Math.round(cpRatio(r)*100);
     const rk    = r.collected ? Math.round(r.rocket/r.collected*100) : 0;
     const hot   = ratio<=40 ? "font-weight:700;color:#b45309" : "";
@@ -852,6 +878,8 @@ function cpRender(){
       +`<td class="c" style="${hot}">${ratio}%</td>`
       +`<td class="c">${r.maxDup}</td>`
       +`<td class="c" style="color:var(--muted)">${rk}%</td>`
+      +`<td class="c" style="color:var(--muted)">${esc(cpShortDate(r.at))}</td>`
+      +`<td style="color:var(--muted);font-size:12px" title="${esc(r.src||"")}">${esc((r.src||"").length>16?(r.src||"").slice(0,15)+"…":(r.src||""))}</td>`
       +`</tr>`;
   }).join("");
   const th = CP_COLS.map(c=>{
@@ -920,7 +948,7 @@ async function cpParseExcel(file){
     const row=aoa[r]||[];
     const kw=String(row[iKw]==null?"":row[iKw]).trim();
     if(!kw || cpNorm(kw)==="키워드") continue;
-    out.push({ kw,
+    out.push({ kw, src: file.name,
       search: iS<0?null:cpNum(row[iS]),
       comp:   iC<0?null:cpNum(row[iC]),
       prod:   iP<0?null:cpNum(row[iP]),
@@ -954,7 +982,7 @@ function cpApplyFilter(){
     if(!prev || (r.search||0) > (prev.search||0)) keep[r.kw]=r;
   }
   const list=Object.values(keep).sort((a,b)=>(b.search||0)-(a.search||0));
-  cpSetKeywords(list.map(r=>({kw:r.kw, search:r.search, comp:r.comp})));
+  cpSetKeywords(list.map(r=>({kw:r.kw, search:r.search, comp:r.comp, src:r.src})));
   const mins=Math.round(list.length*7/60);
   info.textContent=`원본 ${cpRaw.length}행 → ${list.length}개 통과 (예상 ${mins<1?1:mins}분)`;
 }
@@ -1016,10 +1044,21 @@ document.getElementById("cpRun").onclick=async()=>{
   const batchN=parseInt(document.getElementById("cpBatch").value,10)||0;
   const restMs=(parseInt(document.getElementById("cpRest").value,10)||0)*60*1000;
   const resume=document.getElementById("cpResume").checked;
+  const staleDays=parseInt(document.getElementById("cpStale").value,10)||0;
   // 정확히 일정한 간격은 그 자체로 봇 신호 → 매번 ±40% 흔든다
   const jitter=()=>Math.round(baseDelay*(0.6+Math.random()*0.8));
-  const todo=cpKeywords.filter(k=>!(resume && cpResults[k.kw] && !cpResults[k.kw].error));
-  if(!todo.length){ alert("이미 모두 수집했습니다. (이어서 하기를 끄면 다시 수집합니다)"); return; }
+  // 이미 있는 결과를 건너뛸지 판단 (오류는 재시도, 오래된 것도 재수집)
+  const isFresh=(kw)=>{
+    const r=cpResults[kw];
+    if(!r || r.error) return false;
+    if(!staleDays) return true;
+    if(!r.at) return false;                       // 날짜 없는 예전 결과는 다시
+    return (Date.now()-new Date(r.at).getTime()) < staleDays*86400000;
+  };
+  const todo=cpKeywords.filter(k=>!(resume && isFresh(k.kw)));
+  if(!todo.length){
+    alert(`이미 모두 수집했습니다.\n\n다시 수집하려면 '이어서 하기'를 끄거나,\n'N일 지난 건 다시' 값을 줄이세요.`); return; }
+  const skipped=cpKeywords.length-todo.length;
 
   cpRunning=true; cpAbort=false;
   document.getElementById("cpRun").disabled=true;
@@ -1027,13 +1066,14 @@ document.getElementById("cpRun").onclick=async()=>{
   let done=0, blocked=false;
   for(const k of todo){
     if(cpAbort) break;
-    st.textContent=`수집 중… ${++done}/${todo.length}  ·  ${k.kw}`;
+    st.textContent=`수집 중… ${++done}/${todo.length}${skipped?` (건너뜀 ${skipped})`:""}  ·  ${k.kw}`;
     const d=await callExt({action:"coupang", keyword:k.kw, topN});
+    const at=new Date().toISOString();
     if(d && d.ok){
-      cpResults[k.kw]=Object.assign({kw:k.kw, search:k.search, comp:k.comp,
+      cpResults[k.kw]=Object.assign({kw:k.kw, search:k.search, comp:k.comp, src:k.src, at,
         totalCards:d.totalCards, slots:d.slots, ads:d.ads}, groupProducts(d.items||[]));
     }else{
-      cpResults[k.kw]={kw:k.kw, search:k.search, comp:k.comp, error:(d&&d.error)||"실패"};
+      cpResults[k.kw]={kw:k.kw, search:k.search, comp:k.comp, src:k.src, at, error:(d&&d.error)||"실패"};
       if(d && d.blocked){ blocked=true; break; }
     }
     cpSave(); cpRender();
@@ -1053,22 +1093,26 @@ document.getElementById("cpRun").onclick=async()=>{
   cpRunning=false;
   document.getElementById("cpRun").disabled=false;
   document.getElementById("cpStop").disabled=true;
+  const tail = skipped ? ` · 건너뜀 ${skipped}개` : "";
   st.textContent = blocked ? "⛔ 쿠팡 차단 감지 — 중단했습니다. 잠시(10~30분) 뒤 '이어서 하기'로 재개하세요."
-                 : cpAbort ? `중지됨 (${done}개 처리)` : `완료 (${done}개 처리)`;
+                 : cpAbort ? `중지됨 (${done}개 처리${tail})` : `완료 (${done}개 처리${tail})`;
   cpRender();
 };
 
 document.getElementById("cpCsv").onclick=()=>{
   const rows=Object.values(cpResults);
   if(!rows.length){ alert("저장할 결과가 없습니다."); return; }
-  const sorted=cpSortRows(rows);
-  const head=["키워드","총검색수","경쟁강도","상위칸","광고수","분석대상","실제상품수","고유율(%)","최대중복","로켓수","로켓비율(%)","오류"];
+  const only=(document.getElementById("cpSrcFilter")||{}).value||"";
+  const sorted=cpSortRows(only?rows.filter(r=>r.src===only):rows);
+  const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+  const head=["키워드","총검색수","경쟁강도","상위칸","광고수","분석대상","실제상품수","고유율(%)","최대중복","로켓수","로켓비율(%)","수집일시","출처파일","오류"];
   const csv=[head.join(",")].concat(sorted.map(r=>[
-    `"${String(r.kw).replace(/"/g,'""')}"`, r.search??"", r.comp??"",
+    q(r.kw), r.search??"", r.comp??"",
     r.slots??"", r.ads??"", r.collected??"", r.unique??"",
     (r.collected?Math.round(r.unique/r.collected*100):""), r.maxDup??"",
     r.rocket??"", (r.collected?Math.round(r.rocket/r.collected*100):""),
-    r.error?`"${String(r.error).replace(/"/g,'""')}"`:""
+    q(r.at?String(r.at).slice(0,16).replace("T"," "):""), q(r.src),
+    r.error?q(r.error):""
   ].join(","))).join("\r\n");
   const blob=new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8"});
   const a=document.createElement("a");
@@ -1077,6 +1121,7 @@ document.getElementById("cpCsv").onclick=()=>{
   a.click(); URL.revokeObjectURL(a.href);
 };
 
+document.getElementById("cpSrcFilter").onchange=cpRender;
 cpLoadSaved(); cpRender();
 
 // ---------- 이미지 생성 (OpenAI · 회원 각자 키) ----------
