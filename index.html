@@ -388,16 +388,24 @@
         <label style="font-size:13px;color:var(--muted)">상위</label>
         <input type="number" id="cpTopN" value="28" min="5" max="60" style="width:66px">
         <label style="font-size:13px;color:var(--muted)">칸<span class="qmark" data-tip="검색결과 상위 몇 칸을 볼지. 이 안에서 광고를 뺀 나머지가 분석 대상이 됩니다.">?</span> · 간격</label>
-        <input type="number" id="cpDelay" value="6" min="2" max="30" style="width:66px">
+        <input type="number" id="cpDelay" value="9" min="2" max="60" style="width:66px">
         <label style="font-size:13px;color:var(--muted)">초<span class="qmark" data-tip="실제로는 이 값의 ±40% 범위에서 매번 다르게 쉽니다. 정확히 일정한 간격은 그 자체로 봇 신호라 일부러 흔듭니다.">?</span> ·</label>
-        <input type="number" id="cpBatch" value="50" min="0" max="500" style="width:66px">
+        <input type="number" id="cpBatch" value="30" min="0" max="500" style="width:66px">
         <label style="font-size:13px;color:var(--muted)">개마다</label>
-        <input type="number" id="cpRest" value="3" min="0" max="30" style="width:60px">
-        <label style="font-size:13px;color:var(--muted)">분 휴식<span class="qmark" data-tip="일정 개수마다 길게 쉬어 차단 위험을 줄입니다. 0을 넣으면 휴식 없이 계속 돕니다.">?</span></label>
+        <input type="number" id="cpRest" value="5" min="0" max="60" style="width:60px">
+        <label style="font-size:13px;color:var(--muted)">분 휴식<span class="qmark" data-tip="일정 개수마다 길게 쉬어 차단 위험을 줄입니다. 쉬는 동안 시크릿 창도 새로 엽니다. 0을 넣으면 휴식 없이 계속 돕니다.">?</span></label>
         <label style="font-size:13px;margin-left:10px"><input type="checkbox" id="cpResume" checked> 이어서 하기<span class="qmark" data-tip="이미 수집한 키워드는 건너뜁니다. 파일이 달라도 키워드 이름 기준으로 건너뛰며, 오류 났던 키워드는 다시 시도합니다.">?</span></label>
         <label style="font-size:13px;color:var(--muted)">·</label>
         <input type="number" id="cpStale" value="7" min="0" max="365" style="width:60px">
         <label style="font-size:13px;color:var(--muted)">일 지난 건 다시<span class="qmark" data-tip="쿠팡 상위 노출은 계속 바뀝니다. 이 일수보다 오래된 결과는 '이어서 하기' 중이어도 다시 수집합니다. 0을 넣으면 오래돼도 건너뜁니다.">?</span></label>
+      </div>
+      <div class="toolbar" style="margin-bottom:10px">
+        <label style="font-size:13px;color:var(--muted)">차단되면</label>
+        <input type="number" id="cpCool" value="20" min="0" max="180" style="width:66px">
+        <label style="font-size:13px;color:var(--muted)">분 쉬었다 재개 · 최대</label>
+        <input type="number" id="cpCoolMax" value="5" min="0" max="20" style="width:56px">
+        <label style="font-size:13px;color:var(--muted)">번<span class="qmark" data-tip="쿠팡이 막으면 중단하지 않고 이만큼 쉬었다가 막힌 키워드부터 다시 시도합니다. 쉬는 동안 시크릿 창을 닫아 세션을 비웁니다. 지정한 횟수를 넘겨도 계속 막히면 그때 중단합니다. 0을 넣으면 예전처럼 바로 중단합니다.">?</span></label>
+        <span style="font-size:12px;color:var(--muted)">쿠팡은 IP 기준으로 막기 때문에 시크릿 모드로도 피할 수 없습니다. 느리게 도는 것이 가장 확실합니다.</span>
       </div>
       <div class="toolbar">
         <button id="cpRun" style="border:0;background:var(--brand);color:#fff;border-radius:8px;padding:10px 22px;cursor:pointer;font-weight:700">분석 시작</button>
@@ -1094,29 +1102,52 @@ document.getElementById("cpRun").onclick=async()=>{
   cpRunning=true; cpAbort=false;
   document.getElementById("cpRun").disabled=true;
   document.getElementById("cpStop").disabled=false;
-  let done=0, blocked=false;
-  for(const k of todo){
-    if(cpAbort) break;
-    st.textContent=`수집 중… ${++done}/${todo.length}${skipped?` (건너뜀 ${skipped})`:""}  ·  ${k.kw}`;
+  const coolMin=parseInt(document.getElementById("cpCool").value,10)||0;
+  const coolMax=parseInt(document.getElementById("cpCoolMax").value,10)||0;
+
+  // 지정한 시간만큼 기다리며 남은 시간을 보여준다 (중지 누르면 즉시 빠져나옴)
+  async function waitWith(ms, label){
+    const until=Date.now()+ms;
+    while(Date.now()<until && !cpAbort){
+      const left=Math.ceil((until-Date.now())/1000);
+      st.textContent=`${label} ${Math.floor(left/60)}분 ${String(left%60).padStart(2,"0")}초 남음`;
+      await new Promise(r=>setTimeout(r,1000));
+    }
+  }
+
+  let done=0, blocked=false, cools=0;
+  let i=0;
+  while(i<todo.length && !cpAbort){
+    const k=todo[i];
+    st.textContent=`수집 중… ${i+1}/${todo.length}${skipped?` (건너뜀 ${skipped})`:""}${cools?` · 차단대기 ${cools}회`:""}  ·  ${k.kw}`;
     const d=warnIfStale(await callExt({action:"coupang", keyword:k.kw, topN, incognito}));
     const at=new Date().toISOString();
+
+    // ── 차단되면: 쉬었다가 같은 키워드부터 다시 (한도를 넘으면 중단) ──
+    if(d && d.blocked){
+      if(coolMin>0 && cools<coolMax){
+        cools++;
+        if(incognito) await callExt({action:"coupang_close"});   // 세션 비우고 새 창으로
+        await waitWith(coolMin*60*1000, `⛔ 차단 감지 — ${cools}/${coolMax}번째 대기 중…`);
+        continue;                                               // i 그대로 → 같은 키워드 재시도
+      }
+      cpResults[k.kw]={kw:k.kw, search:k.search, comp:k.comp, src:k.src, at, error:d.error||"차단"};
+      blocked=true; cpSave(); cpRender(); break;
+    }
+
     if(d && d.ok){
       cpResults[k.kw]=Object.assign({kw:k.kw, search:k.search, comp:k.comp, src:k.src, at,
         totalCards:d.totalCards, slots:d.slots, ads:d.ads}, groupProducts(d.items||[]));
     }else{
       cpResults[k.kw]={kw:k.kw, search:k.search, comp:k.comp, src:k.src, at, error:(d&&d.error)||"실패"};
-      if(d && d.blocked){ blocked=true; break; }
     }
+    done++; i++;
     cpSave(); cpRender();
     if(cpAbort) break;
     // 묶음 휴식 (마지막 키워드 뒤에는 쉬지 않음)
-    if(batchN && restMs && done % batchN === 0 && done < todo.length){
-      const until=Date.now()+restMs;
-      while(Date.now()<until && !cpAbort){
-        const left=Math.ceil((until-Date.now())/1000);
-        st.textContent=`😴 ${batchN}개 처리 후 휴식 중… ${Math.floor(left/60)}분 ${left%60}초 남음 (${done}/${todo.length})`;
-        await new Promise(r=>setTimeout(r,1000));
-      }
+    if(batchN && restMs && done % batchN === 0 && i < todo.length){
+      if(incognito) await callExt({action:"coupang_close"});   // 쉬는 김에 세션도 비운다
+      await waitWith(restMs, `😴 ${batchN}개 처리 후 휴식 중… (${done}/${todo.length})`);
     }else{
       await new Promise(r=>setTimeout(r, jitter()));
     }
@@ -1125,8 +1156,8 @@ document.getElementById("cpRun").onclick=async()=>{
   if(incognito) await callExt({action:"coupang_close"});   // 시크릿 창 정리
   document.getElementById("cpRun").disabled=false;
   document.getElementById("cpStop").disabled=true;
-  const tail = skipped ? ` · 건너뜀 ${skipped}개` : "";
-  st.textContent = blocked ? "⛔ 쿠팡 차단 감지 — 중단했습니다. 잠시(10~30분) 뒤 '이어서 하기'로 재개하세요."
+  const tail = (skipped ? ` · 건너뜀 ${skipped}개` : "") + (cools ? ` · 차단대기 ${cools}회` : "");
+  st.textContent = blocked ? `⛔ 차단이 계속됩니다 (${done}개 수집 후 중단). 30분~1시간 뒤 '분석 시작'을 누르면 이어서 진행합니다.`
                  : cpAbort ? `중지됨 (${done}개 처리${tail})` : `완료 (${done}개 처리${tail})`;
   cpRender();
 };
