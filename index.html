@@ -541,6 +541,7 @@ async function startApp(userLabel, isAdmin){
   document.getElementById("who").textContent = userLabel||"";
   document.getElementById("tabAdmin").hidden = !isAdmin;     // 관리자만 관리자 탭
   document.getElementById("tabCoupang").hidden = !isAdmin;   // 쿠팡 분석도 관리자 전용
+  IS_ADMIN = !!isAdmin;
   DATA = await loadData();
   renderMeta(); fillFilters(); renderSchedule(); renderKeywords();
 }
@@ -551,7 +552,12 @@ const SHOW_IMAGE_TAB = true;
 if(SHOW_IMAGE_TAB) document.getElementById("tabImage").hidden = false;
 
 // 탭 전환
+// 관리자 전용 탭 — 버튼을 숨기는 것만으로는 부족해서 전환 자체를 막는다
+const ADMIN_TABS = ["coupang","admin"];
+let IS_ADMIN = false;
+
 function showTab(name){
+  if(ADMIN_TABS.includes(name) && !IS_ADMIN){ name = "hsmoa"; }
   ["hsmoa","sourcing","image","coupang","admin"].forEach(t=>{
     const s=document.getElementById("tab-"+t); if(s) s.hidden = (t!==name);
   });
@@ -852,6 +858,7 @@ document.getElementById("cpStop").onclick=()=>{ cpAbort=true; };
 
 document.getElementById("cpRun").onclick=async()=>{
   if(cpRunning) return;
+  if(!IS_ADMIN){ alert("이 기능은 운영자만 사용할 수 있습니다."); return; }
   const st=document.getElementById("cpStatus");
   if(!cpKeywords.length){ alert("먼저 키워드를 불러오세요."); return; }
   if(!extReady){ alert("크롬 확장이 연결되지 않았습니다.\n확장 설치 후 이 페이지를 새로고침(Ctrl+F5)하세요."); return; }
