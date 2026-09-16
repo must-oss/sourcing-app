@@ -405,6 +405,9 @@
         <label style="font-size:13px;color:var(--muted)">분 쉬었다 재개 · 최대</label>
         <input type="number" id="cpCoolMax" value="5" min="0" max="20" style="width:56px">
         <label style="font-size:13px;color:var(--muted)">번<span class="qmark" data-tip="쿠팡이 막으면 중단하지 않고 이만큼 쉬었다가 막힌 키워드부터 다시 시도합니다. 쉬는 동안 시크릿 창을 닫아 세션을 비웁니다. 지정한 횟수를 넘겨도 계속 막히면 그때 중단합니다. 0을 넣으면 예전처럼 바로 중단합니다.">?</span></label>
+        <label style="font-size:13px;color:var(--muted)">· 한 번에</label>
+        <input type="number" id="cpCap" value="50" min="0" max="1000" style="width:64px">
+        <label style="font-size:13px;color:var(--muted)">개까지<span class="qmark" data-tip="이만큼 수집하면 스스로 멈춥니다. 다음 날 '분석 시작'을 다시 누르면 이어서 그다음 몫을 합니다. 하루에 나눠 도는 것이 차단을 피하는 가장 확실한 방법입니다. 0을 넣으면 한도 없이 끝까지 돕니다.">?</span></label>
         <span style="font-size:12px;color:var(--muted)">쿠팡은 IP 기준으로 막기 때문에 시크릿 모드로도 피할 수 없습니다. 느리게 도는 것이 가장 확실합니다.</span>
       </div>
       <div class="toolbar">
@@ -989,8 +992,12 @@ function cpApplyFilter(){
   }
   const list=Object.values(keep).sort((a,b)=>(b.search||0)-(a.search||0));
   cpSetKeywords(list.map(r=>({kw:r.kw, search:r.search, comp:r.comp, src:r.src})));
-  const mins=Math.round(list.length*7/60);
-  info.textContent=`원본 ${cpRaw.length}행 → ${list.length}개 통과 (예상 ${mins<1?1:mins}분)`;
+  const capEl=document.getElementById("cpCap");
+  const cap=capEl?(parseInt(capEl.value,10)||0):0;
+  const batch=(cap>0 && cap<list.length) ? cap : list.length;
+  const mins=Math.max(1, Math.round(batch*11/60));       // 간격+휴식 감안 대략치
+  info.textContent=`원본 ${cpRaw.length}행 → ${list.length}개 통과`
+    + (batch<list.length ? ` · 이번엔 ${batch}개 (약 ${mins}분)` : ` (약 ${mins}분)`);
 }
 
 document.getElementById("cpFile").onchange = async (e)=>{
@@ -1023,7 +1030,7 @@ document.getElementById("cpFile").onchange = async (e)=>{
     alert(err.message||String(err));
   }
 };
-["cpMinSearch","cpMaxComp","cpMaxProd","cpMinShop","cpShopOnly","cpCat"].forEach(id=>{
+["cpMinSearch","cpMaxComp","cpMaxProd","cpMinShop","cpShopOnly","cpCat","cpCap"].forEach(id=>{
   const el=document.getElementById(id);
   el.addEventListener(el.type==="checkbox"?"change":"input", cpApplyFilter);
 });
@@ -1094,10 +1101,13 @@ document.getElementById("cpRun").onclick=async()=>{
     if(!r.at) return false;                       // 날짜 없는 예전 결과는 다시
     return (Date.now()-new Date(r.at).getTime()) < staleDays*86400000;
   };
-  const todo=cpKeywords.filter(k=>!(resume && isFresh(k.kw)));
-  if(!todo.length){
+  const remain=cpKeywords.filter(k=>!(resume && isFresh(k.kw)));
+  if(!remain.length){
     alert(`이미 모두 수집했습니다.\n\n다시 수집하려면 '이어서 하기'를 끄거나,\n'N일 지난 건 다시' 값을 줄이세요.`); return; }
-  const skipped=cpKeywords.length-todo.length;
+  const cap=parseInt(document.getElementById("cpCap").value,10)||0;
+  const todo=(cap>0) ? remain.slice(0,cap) : remain;     // 한 번에 할 몫만
+  const left=remain.length-todo.length;                  // 다음 번으로 미룬 개수
+  const skipped=cpKeywords.length-remain.length;
 
   cpRunning=true; cpAbort=false;
   document.getElementById("cpRun").disabled=true;
@@ -1157,8 +1167,10 @@ document.getElementById("cpRun").onclick=async()=>{
   document.getElementById("cpRun").disabled=false;
   document.getElementById("cpStop").disabled=true;
   const tail = (skipped ? ` · 건너뜀 ${skipped}개` : "") + (cools ? ` · 차단대기 ${cools}회` : "");
+  const more = left ? ` · 남은 ${left}개는 다음에 '분석 시작'을 누르면 이어서 합니다` : "";
   st.textContent = blocked ? `⛔ 차단이 계속됩니다 (${done}개 수집 후 중단). 30분~1시간 뒤 '분석 시작'을 누르면 이어서 진행합니다.`
-                 : cpAbort ? `중지됨 (${done}개 처리${tail})` : `완료 (${done}개 처리${tail})`;
+                 : cpAbort ? `중지됨 (${done}개 처리${tail})`
+                 : `✅ 완료 (${done}개 처리${tail})${more}`;
   cpRender();
 };
 
