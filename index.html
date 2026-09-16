@@ -404,8 +404,7 @@
         <button id="cpStop" disabled style="border:1px solid var(--line);background:#fff;border-radius:8px;padding:10px 18px;cursor:pointer">중지</button>
         <button id="cpCsv" style="border:1px solid var(--brand);background:#fff;color:var(--brand);border-radius:8px;padding:10px 16px;cursor:pointer;font-weight:600">CSV 저장</button>
         <button id="cpClear" style="border:1px solid var(--line);background:#fff;border-radius:8px;padding:10px 14px;cursor:pointer">결과 지우기</button>
-        <label style="font-size:13px;color:var(--muted);margin-left:6px">보기</label>
-        <select id="cpSrcFilter"><option value="">모든 파일</option></select>
+        <label style="font-size:13px;margin-left:6px"><input type="checkbox" id="cpIncog" checked> 🕶 시크릿 모드<span class="qmark" data-tip="쿠팡은 내가 눌러본 상품을 위로 올려 보여줍니다. 시크릿 창에서 열면 이력·쿠키가 없는 상태라 중립적인 순위를 볼 수 있습니다. 처음 한 번 chrome://extensions 에서 이 확장의 '시크릿 모드에서 허용'을 켜야 합니다.">?</span></label>
         <span class="count" id="cpStatus"></span>
       </div>
       <div id="cpResults" class="placeholder">키워드를 불러오고 <b>분석 시작</b>을 누르세요.</div>
@@ -811,7 +810,6 @@ const CP_COLS = [
   {k:"maxDup",    t:"최대중복", w:66,  desc:true},
   {k:"rocketPct", t:"로켓",     w:56,  dim:true},
   {k:"at",        t:"수집일",   w:62,  dim:true, desc:true},
-  {k:"src",       t:"출처",     w:110, align:"left", dim:true},
 ];
 const cpShortDate = s => s ? String(s).slice(5,10).replace("-","/") : "";
 let cpSort = {key:"ratio", asc:true};   // 기본: 고유율 낮은 순 (장악 심한 순)
@@ -846,30 +844,15 @@ function cpSetSort(key){
   cpRender();
 }
 
-// 출처 파일 목록을 드롭다운에 채운다(선택값은 유지)
-function cpFillSrcFilter(){
-  const sel=document.getElementById("cpSrcFilter"); if(!sel) return;
-  const cur=sel.value;
-  const srcs=[...new Set(Object.values(cpResults).map(r=>r.src).filter(Boolean))].sort();
-  sel.innerHTML=`<option value="">모든 파일</option>`+
-    srcs.map(s=>`<option value="${esc(s)}">${esc(s.length>28?s.slice(0,26)+"…":s)}</option>`).join("");
-  sel.value = srcs.includes(cur) ? cur : "";
-}
-
 function cpRender(){
   const box=document.getElementById("cpResults");
-  let all=Object.values(cpResults);
-  if(!all.length){ box.innerHTML='<div class="placeholder">아직 결과가 없습니다.</div>'; cpFillSrcFilter(); return; }
-  cpFillSrcFilter();
-  const only=(document.getElementById("cpSrcFilter")||{}).value||"";
-  if(only) all=all.filter(r=>r.src===only);
-  if(!all.length){ box.innerHTML='<div class="placeholder">이 파일의 결과가 없습니다.</div>'; return; }
+  const all=Object.values(cpResults);
+  if(!all.length){ box.innerHTML='<div class="placeholder">아직 결과가 없습니다.</div>'; return; }
   const rows=cpSortRows(all);
   const tr=rows.map((r,i)=>{
     if(r.error) return `<tr><td class="c">${i+1}</td><td>${esc(r.kw)}</td>`
       +`<td colspan="9" style="color:var(--warn)">${esc(r.error)}</td>`
-      +`<td class="c" style="color:var(--muted)">${esc(cpShortDate(r.at))}</td>`
-      +`<td style="color:var(--muted);font-size:12px">${esc(r.src||"")}</td></tr>`;
+      +`<td class="c" style="color:var(--muted)">${esc(cpShortDate(r.at))}</td></tr>`;
     const ratio = Math.round(cpRatio(r)*100);
     const rk    = r.collected ? Math.round(r.rocket/r.collected*100) : 0;
     const hot   = ratio<=40 ? "font-weight:700;color:#b45309" : "";
@@ -886,7 +869,6 @@ function cpRender(){
       +`<td class="c">${r.maxDup}</td>`
       +`<td class="c" style="color:var(--muted)">${rk}%</td>`
       +`<td class="c" style="color:var(--muted)">${esc(cpShortDate(r.at))}</td>`
-      +`<td style="color:var(--muted);font-size:12px" title="${esc(r.src||"")}">${esc((r.src||"").length>16?(r.src||"").slice(0,15)+"…":(r.src||""))}</td>`
       +`</tr>`;
   }).join("");
   const th = CP_COLS.map(c=>{
@@ -1051,8 +1033,10 @@ async function cpScanOne(){
   if(cpRunning){ alert("전체 분석이 진행 중입니다. 끝나거나 중지한 뒤 실행하세요."); return; }
   if(!extReady){ alert("크롬 확장이 연결되지 않았습니다.\n확장 설치 후 이 페이지를 새로고침(Ctrl+F5)하세요."); return; }
   const topN=parseInt(document.getElementById("cpTopN").value,10)||28;
+  const incognito=document.getElementById("cpIncog").checked;
   btn.disabled=true; st.textContent=`수집 중… ${kw}`;
-  const d=await callExt({action:"coupang", keyword:kw, topN});
+  const d=await callExt({action:"coupang", keyword:kw, topN, incognito});
+  if(incognito) callExt({action:"coupang_close"});   // 단건은 끝나면 바로 정리
   const at=new Date().toISOString();
   if(d && d.ok){
     cpResults[kw]=Object.assign({kw, search:null, comp:null, src:"직접 입력", at,
@@ -1064,8 +1048,6 @@ async function cpScanOne(){
     st.textContent=`실패 — ${(d&&d.error)||"오류"}`;
   }
   cpSave();
-  const sel=document.getElementById("cpSrcFilter");
-  if(sel.value && sel.value!=="직접 입력") sel.value="";   // 방금 결과가 안 보이는 일 방지
   cpRender();
   btn.disabled=false;
 }
@@ -1084,6 +1066,7 @@ document.getElementById("cpRun").onclick=async()=>{
   const restMs=(parseInt(document.getElementById("cpRest").value,10)||0)*60*1000;
   const resume=document.getElementById("cpResume").checked;
   const staleDays=parseInt(document.getElementById("cpStale").value,10)||0;
+  const incognito=document.getElementById("cpIncog").checked;
   // 정확히 일정한 간격은 그 자체로 봇 신호 → 매번 ±40% 흔든다
   const jitter=()=>Math.round(baseDelay*(0.6+Math.random()*0.8));
   // 이미 있는 결과를 건너뛸지 판단 (오류는 재시도, 오래된 것도 재수집)
@@ -1106,7 +1089,7 @@ document.getElementById("cpRun").onclick=async()=>{
   for(const k of todo){
     if(cpAbort) break;
     st.textContent=`수집 중… ${++done}/${todo.length}${skipped?` (건너뜀 ${skipped})`:""}  ·  ${k.kw}`;
-    const d=await callExt({action:"coupang", keyword:k.kw, topN});
+    const d=await callExt({action:"coupang", keyword:k.kw, topN, incognito});
     const at=new Date().toISOString();
     if(d && d.ok){
       cpResults[k.kw]=Object.assign({kw:k.kw, search:k.search, comp:k.comp, src:k.src, at,
@@ -1130,6 +1113,7 @@ document.getElementById("cpRun").onclick=async()=>{
     }
   }
   cpRunning=false;
+  if(incognito) await callExt({action:"coupang_close"});   // 시크릿 창 정리
   document.getElementById("cpRun").disabled=false;
   document.getElementById("cpStop").disabled=true;
   const tail = skipped ? ` · 건너뜀 ${skipped}개` : "";
@@ -1141,8 +1125,7 @@ document.getElementById("cpRun").onclick=async()=>{
 document.getElementById("cpCsv").onclick=()=>{
   const rows=Object.values(cpResults);
   if(!rows.length){ alert("저장할 결과가 없습니다."); return; }
-  const only=(document.getElementById("cpSrcFilter")||{}).value||"";
-  const sorted=cpSortRows(only?rows.filter(r=>r.src===only):rows);
+  const sorted=cpSortRows(rows);
   const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
   const head=["키워드","총검색수","경쟁강도","상위칸","광고수","분석대상","실제상품수","고유율(%)","최대중복","로켓수","로켓비율(%)","수집일시","출처파일","오류"];
   const csv=[head.join(",")].concat(sorted.map(r=>[
@@ -1160,7 +1143,6 @@ document.getElementById("cpCsv").onclick=()=>{
   a.click(); URL.revokeObjectURL(a.href);
 };
 
-document.getElementById("cpSrcFilter").onchange=cpRender;
 cpLoadSaved(); cpRender();
 
 // ---------- 이미지 생성 (OpenAI · 회원 각자 키) ----------
