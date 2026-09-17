@@ -234,7 +234,7 @@
     <button class="active" data-tab="hsmoa"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg>홈쇼핑 키워드</button>
     <button data-tab="sourcing"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8v8l-9 5-9-5V8l9-5 9 5Z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>도매몰 소싱</button>
     <button data-tab="image" id="tabImage" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>이미지 생성</button>
-    <button data-tab="youtube"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="4"/><path d="m10 9 5 3-5 3V9Z"/></svg>유튜브 리서치</button>
+    <button data-tab="youtube" id="tabYoutube" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="4"/><path d="m10 9 5 3-5 3V9Z"/></svg>유튜브 리서치</button>
     <button data-tab="guide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>사용 가이드</button>
     <button data-tab="coupang" id="tabCoupang" hidden style="margin-left:auto"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M6 21v-7M11 21V8M16 21v-4M21 21V12"/></svg>쿠팡 분석</button>
     <button data-tab="admin" id="tabAdmin" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20.5c.6-3.8 3.8-5.5 7.5-5.5s6.9 1.7 7.5 5.5"/></svg>관리자</button>
@@ -712,7 +712,7 @@
         </div>
       </details>
 
-      <details class="gd"><summary>📺 유튜브 리서치 — 무엇을 찾는 도구인가</summary>
+      <details class="gd ytguide"><summary>📺 유튜브 리서치 — 무엇을 찾는 도구인가</summary>
         <div class="body">
           <p><b>"구독자는 적은데 조회수가 터진 영상"</b>을 찾는 도구입니다.
              그런 영상은 재능이 아니라 <b>주제·제목·썸네일이 먹혔다는 뜻</b>이라 그대로 참고할 수 있습니다.</p>
@@ -768,7 +768,7 @@
         </div>
       </details>
 
-      <details class="gd"><summary>📊 성과도 · 떡상배수 읽는 법</summary>
+      <details class="gd ytguide"><summary>📊 성과도 · 떡상배수 읽는 법</summary>
         <div class="body">
           <p><b>성과도</b> = 구독자 수 대비 조회수 등급
              <span style="color:var(--muted)">(조회수 ÷ 구독자수 — 채널끼리 비교)</span><br>
@@ -792,17 +792,40 @@
         </div>
       </details>
 
-      <details class="gd"><summary>🎫 검색 횟수와 등급</summary>
+      <details class="gd ytguide"><summary>🎫 회원 등급과 사용 횟수</summary>
         <div class="body">
-          <p>유튜브가 하루에 허용하는 검색 수가 정해져 있어 등급별로 나눠 씁니다.
-             <b>같은 검색어를 24시간 안에 다시 검색하면 저장된 결과를 보여주며 횟수가 차감되지 않습니다.</b></p>
+          <p>유튜브가 하루에 허용하는 <b>검색</b> 수가 정해져 있어, 회원끼리 나눠 쓰도록 등급을 둡니다.
+             가입하면 모두 <b>FREE</b>로 시작합니다.</p>
           <table>
-            <tr><th style="width:90px">등급</th><th>영상 찾기</th><th>채널 찾기</th></tr>
-            <tr><td><b>FREE</b></td><td>2회 / 30일</td><td>2회 / 30일</td></tr>
-            <tr><td><b>SILVER</b></td><td>10회 / 30일</td><td>10회 / 30일</td></tr>
-            <tr><td><b>GOLD</b></td><td>30회 / 30일</td><td>30회 / 30일</td></tr>
+            <tr><th style="width:86px">등급</th><th>영상 찾기</th><th>채널 찾기</th><th>채널 최신화</th><th>등록 채널</th></tr>
+            <tr><td><b>FREE</b></td><td>2회</td><td>2회</td><td>2회</td><td>1개</td></tr>
+            <tr><td><b>SILVER</b></td><td>10회</td><td>10회</td><td>10회</td><td>5개</td></tr>
+            <tr><td><b>GOLD</b></td><td>30회</td><td>30회</td><td>30회</td><td>15개</td></tr>
           </table>
-          <p style="color:var(--muted)">남은 횟수는 검색창 옆에 항상 표시됩니다. 등급 변경은 운영자에게 문의해 주세요.</p>
+          <p style="color:var(--muted)">횟수는 <b>30일 기준</b>이고, 남은 횟수는 검색창 옆에 항상 표시됩니다.
+             등급 변경은 운영자에게 문의해 주세요.</p>
+
+          <div class="box">
+            <b>횟수를 쓰지 않는 것들</b><br>
+            검색 내역에서 예전 키워드 누르기 · 24시간 안에 같은 조건으로 재검색 ·
+            채널 분석 다시 열기 · 결과 필터 · 열 정렬 · 표/카드 전환 · CSV 내려받기 · ⭐ 수집<br>
+            <span style="color:var(--muted)">한 번 받아온 결과를 다시 보는 동작은 전부 무료입니다.</span>
+          </div>
+
+          <div class="box" style="border-left-color:var(--warn)">
+            <b>횟수를 아끼는 법</b><br>
+            ① <b>이미 아는 채널은 검색하지 마세요.</b> 채널 분석 탭에 유튜브 주소
+            (<code>youtube.com/@이름</code>)를 붙여넣으면 <b>횟수가 들지 않습니다.</b>
+            채널 찾기는 모르는 채널을 키워드로 발굴할 때만 씁니다.<br>
+            ② <b>검색어·수집 기준·기간을 바꿀 때만</b> 차감됩니다. 받아온 50개를
+            필터로 좁히는 건 몇 번을 해도 무료입니다.<br>
+            ③ 같은 키워드를 다른 회원이 24시간 안에 이미 검색했다면 그 결과를 나눠 쓰므로
+            차감되지 않습니다.
+          </div>
+
+          <p><b>왜 검색만 비싼가</b> — 유튜브는 요청마다 점수를 매기고 하루 10,000점을 줍니다.
+             <b>검색은 한 번에 100점</b>이지만 채널 정보·영상 목록 조회는 <b>1점</b>입니다.
+             그래서 검색만 한도가 걸리고 나머지는 사실상 제한이 없습니다.</p>
         </div>
       </details>
 
@@ -1067,6 +1090,8 @@ async function startApp(userLabel, isAdmin){
   document.getElementById("who").textContent = userLabel||"";
   document.getElementById("tabAdmin").hidden = !isAdmin;     // 관리자만 관리자 탭
   document.getElementById("tabCoupang").hidden = !isAdmin;   // 쿠팡 분석도 관리자 전용
+  document.getElementById("tabYoutube").hidden = !isAdmin;   // 유튜브 리서치 — 공개 전까지 비공개
+  document.querySelectorAll(".ytguide").forEach(d=>d.hidden = !isAdmin);  // 가이드의 유튜브 항목도 같이
   IS_ADMIN = !!isAdmin;
   DATA = await loadData();
   renderMeta(); fillFilters(); renderSchedule(); renderKeywords();
@@ -1080,7 +1105,7 @@ if(SHOW_IMAGE_TAB) document.getElementById("tabImage").hidden = false;
 
 // 탭 전환
 // 관리자 전용 탭 — 버튼을 숨기는 것만으로는 부족해서 전환 자체를 막는다
-const ADMIN_TABS = ["coupang","admin"];
+const ADMIN_TABS = ["coupang","admin","youtube"];   // 유튜브 리서치는 아직 비공개
 let IS_ADMIN = false;
 
 function showTab(name){
@@ -1461,7 +1486,8 @@ function ytShowPane(name){
     ytMode=isVideo?"video_search":"channel_search";
     document.getElementById("ytHint").innerHTML = isVideo
       ? `구독자 대비 조회수가 터진 영상을 찾습니다. <a href="#" data-goguide="1" style="cursor:pointer"><b><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>보는 법</b></a>`
-      : `키워드와 관련된 채널을 찾습니다. 구독자 대비 평균 조회수가 좋은 채널이 벤치마킹 대상입니다.`;
+      : `키워드로 <b>모르는 채널을 발굴</b>할 때 씁니다.
+         <span style="color:var(--warn)">이미 아는 채널은 <b>채널 분석</b> 탭에서 주소를 붙여넣어 등록하세요 — 검색 횟수가 차감되지 않습니다.</span>`;
     document.getElementById("ytQ").placeholder = isVideo
       ? "검색어 (예: 콜라겐, 갱년기 영양제)" : "채널 관련 키워드 (예: 건강정보, 약사)";
     ytRestoreState();
