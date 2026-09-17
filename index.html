@@ -385,14 +385,39 @@
       <details style="margin-top:14px">
         <summary style="cursor:pointer;color:var(--brand2);font-size:13px">성과도 · 떡상배수 보는 법</summary>
         <div style="background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px;margin-top:8px;font-size:13px;line-height:1.8">
-          <b>성과도 = 조회수 ÷ 구독자수</b> — 구독자 규모 대비 얼마나 터졌는가 (채널 간 비교)<br>
-          <span style="color:var(--muted)">0.1 미만 실패작 · 0.1~0.5 보통 · 0.5~1 양호 ·
-          <b style="color:#b45309">1~5 우수(외부 유입 시작)</b> · <b style="color:#b45309">5~20 확실한 떡상</b> · 20+ 대박</span><br><br>
-          <b>떡상배수 = 조회수 ÷ 그 채널 평균 조회수</b> — 그 채널 안에서 이 영상만 잘된 정도 (채널 내 비교)<br>
-          <span style="color:var(--muted)">0.5 미만 실패작 · 0.5~1.5 평소 수준 · 1.5~3 잘된 편 ·
-          <b style="color:#b45309">3~10 히트작</b> · 10+ 이례적 대박</span><br><br>
-          <b>둘 다 높은 영상</b>이 진짜 참고할 만한 케이스입니다. 성과도만 높으면 원래 구독자가 적은 채널일 수 있고,
-          떡상배수만 높으면 원래 조회수가 낮은 채널일 수 있습니다.
+          <b>성과도</b> — 구독자 규모 대비 얼마나 터졌는가 <span style="color:var(--muted)">(조회수 ÷ 구독자수, 채널 간 비교)</span><br>
+          <b>떡상배수</b> — 그 채널 안에서 이 영상만 유독 잘된 정도 <span style="color:var(--muted)">(조회수 ÷ 그 채널 평균 조회수, 채널 내 비교)</span><br><br>
+          <table style="border-collapse:collapse;font-size:12.5px;width:100%;max-width:520px">
+            <tr><th style="border:1px solid var(--line);padding:5px 8px;background:#fff;width:72px">등급</th>
+                <th style="border:1px solid var(--line);padding:5px 8px;background:#fff">뜻</th>
+                <th style="border:1px solid var(--line);padding:5px 8px;background:#fff;width:82px">성과도</th>
+                <th style="border:1px solid var(--line);padding:5px 8px;background:#fff;width:82px">떡상배수</th></tr>
+            <tr><td style="border:1px solid var(--line);padding:5px 8px;color:#9aa1ac">LOW</td>
+                <td style="border:1px solid var(--line);padding:5px 8px">구독자에게도 잘 안 닿음</td>
+                <td style="border:1px solid var(--line);padding:5px 8px" class="c">0.5 미만</td>
+                <td style="border:1px solid var(--line);padding:5px 8px" class="c">1 미만</td></tr>
+            <tr><td style="border:1px solid var(--line);padding:5px 8px;color:#374151">GOOD</td>
+                <td style="border:1px solid var(--line);padding:5px 8px">구독자 대부분이 시청 · 평소 수준</td>
+                <td style="border:1px solid var(--line);padding:5px 8px" class="c">0.5 ~ 1</td>
+                <td style="border:1px solid var(--line);padding:5px 8px" class="c">1 ~ 1.5</td></tr>
+            <tr><td style="border:1px solid var(--line);padding:5px 8px;color:#2563eb;font-weight:600">GREAT</td>
+                <td style="border:1px solid var(--line);padding:5px 8px">외부 유입 시작 · 잘된 편</td>
+                <td style="border:1px solid var(--line);padding:5px 8px" class="c">1 ~ 3</td>
+                <td style="border:1px solid var(--line);padding:5px 8px" class="c">1.5 ~ 3</td></tr>
+            <tr><td style="border:1px solid var(--line);padding:5px 8px;color:#ea580c;font-weight:700">HOT</td>
+                <td style="border:1px solid var(--line);padding:5px 8px">알고리즘이 밀어주는 중 · 히트작</td>
+                <td style="border:1px solid var(--line);padding:5px 8px" class="c">3 ~ 10</td>
+                <td style="border:1px solid var(--line);padding:5px 8px" class="c">3 ~ 10</td></tr>
+            <tr><td style="border:1px solid var(--line);padding:5px 8px;color:#dc2626;font-weight:800;background:#fee2e2">VIRAL</td>
+                <td style="border:1px solid var(--line);padding:5px 8px">대박 · 이례적으로 터짐</td>
+                <td style="border:1px solid var(--line);padding:5px 8px" class="c">10 이상</td>
+                <td style="border:1px solid var(--line);padding:5px 8px" class="c">10 이상</td></tr>
+          </table>
+          <div style="margin-top:10px">
+            <b>두 열이 모두 HOT 이상</b>인 영상이 진짜 참고할 만한 케이스입니다.
+            성과도만 높으면 원래 구독자가 적은 채널일 수 있고, 떡상배수만 높으면 원래 조회수가 낮은 채널일 수 있습니다.<br>
+            <span style="color:var(--muted)">등급 칸에 마우스를 올리면 실제 수치가 보입니다. 정렬은 수치 기준으로 동작합니다.</span>
+          </div>
         </div>
       </details>
     </section>
@@ -879,12 +904,32 @@ function ytAgo(s){
   const d=Math.floor((Date.now()-new Date(s).getTime())/86400000);
   return d<1?"오늘":d<30?`${d}일 전`:d<365?`${Math.floor(d/30)}개월 전`:`${Math.floor(d/365)}년 전`;
 }
-// 성과도·떡상배수 강조 (기준은 성과도 1↑ / 떡상배수 3↑ 부터 의미 있음)
-function ytHeat(v, kind){
-  if(v==null) return "";
-  const hot = kind==="perf" ? (v>=5?2:v>=1?1:0) : (v>=10?2:v>=3?1:0);
-  return hot===2 ? "font-weight:700;color:#b45309;background:#fef3e2"
-       : hot===1 ? "font-weight:600;color:#b45309" : "";
+// ── 5등급 라벨 ──
+// 숫자(0.39, 12.4…)는 기준을 외워야 읽히므로 화면에는 등급 단어를 보여준다.
+// 두 지표가 같은 척도를 쓰므로 한 번만 익히면 두 열을 함께 읽을 수 있다.
+// 원래 숫자는 마우스를 올리면(title) 보이고, 정렬은 숫자 기준으로 동작한다.
+const YT_GRADES=[
+  {name:"LOW",   css:"color:#9aa1ac"},
+  {name:"GOOD",  css:"color:#374151"},
+  {name:"GREAT", css:"color:#2563eb;font-weight:600"},
+  {name:"HOT",   css:"color:#ea580c;font-weight:700"},
+  {name:"VIRAL", css:"color:#dc2626;font-weight:800;background:#fee2e2;border-radius:4px"},
+];
+// 등급 경계 (kind 별로 다름)
+const YT_CUTS={
+  perf: [0.5, 1, 3, 10],   // 조회수÷구독자
+  boom: [1, 1.5, 3, 10],   // 조회수÷채널 평균조회수
+};
+function ytGrade(v, kind){
+  if(v==null || isNaN(v)) return null;
+  const cuts=YT_CUTS[kind]||YT_CUTS.perf;
+  let i=0; while(i<cuts.length && v>=cuts[i]) i++;
+  return YT_GRADES[i];
+}
+function ytGradeCell(v, kind){
+  const g=ytGrade(v, kind);
+  if(!g) return `<td class="c" style="color:#c8ccd2">-</td>`;
+  return `<td class="c" style="${g.css};font-size:12.5px;letter-spacing:.3px" title="${kind==="perf"?"성과도":"떡상배수"} ${v}">${g.name}</td>`;
 }
 
 async function ytCall(payload){
@@ -974,7 +1019,7 @@ function ytRender(){
         +`<td style="color:var(--muted);font-size:12px">${esc(r.desc||"")}</td>`
         +`<td class="c">${ytNum(r.subs)}</td><td class="c">${ytNum(r.videoCount)}</td>`
         +`<td class="c">${ytNum(r.avgViews)}</td>`
-        +`<td class="c" style="${ytHeat(r.perf,"perf")}">${r.perf??"-"}</td></tr>`;
+        + ytGradeCell(r.perf,"perf") + `</tr>`;
     }
     const isShort = r.duration>0 && r.duration<=60;
     const mmss = r.duration ? `${Math.floor(r.duration/60)}:${String(r.duration%60).padStart(2,"0")}` : "";
@@ -987,16 +1032,18 @@ function ytRender(){
       +`<td class="c">${ytNum(r.subs)}</td>`
       +`<td class="c">${ytNum(r.views)}</td>`
       +`<td class="c" style="color:var(--muted)">${ytNum(r.likes)}</td>`
-      +`<td class="c" style="${ytHeat(r.perf,"perf")}">${r.perf??"-"}</td>`
-      +`<td class="c" style="${ytHeat(r.boom,"boom")}">${r.boom??"-"}</td>`
+      + ytGradeCell(r.perf,"perf")
+      + ytGradeCell(r.boom,"boom")
       +`<td class="c" style="color:var(--muted)" title="${esc(r.published||"")}">${ytAgo(r.published)}</td>`
       +`</tr>`;
   }).join("");
 
   box.innerHTML=`<div class="tablewrap"><table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></div>
-    <div style="font-size:12.5px;color:var(--muted);margin-top:8px">
-      ${rows.length}개 표시 (수집 ${ytRows.length}개) · 열 제목을 눌러 정렬 ·
-      <b style="color:#b45309">주황색</b>이 눈여겨볼 영상입니다.
+    <div style="font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.9">
+      ${rows.length}개 표시 (수집 ${ytRows.length}개) · 열 제목을 눌러 정렬 · 등급에 마우스를 올리면 실제 수치가 보입니다<br>
+      ${YT_GRADES.map(g=>`<span style="${g.css};padding:1px 6px;font-size:12px">${g.name}</span>`).join(
+        `<span style="color:#c8ccd2">→</span>`)}
+      <span style="margin-left:8px"><b style="color:#ea580c">HOT</b>·<b style="color:#dc2626">VIRAL</b> 이 눈여겨볼 영상입니다</span>
     </div>`;
   box.querySelectorAll("th[data-ytsort]").forEach(h=>h.onclick=()=>ytSetSort(h.dataset.ytsort));
 }
@@ -1040,13 +1087,16 @@ document.getElementById("ytCsv").onclick=()=>{
   const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
   let head, body;
   if(ytMode==="video_search"){
-    head=["제목","채널","구독자","조회수","좋아요","성과도","떡상배수","게시일","형태","링크"];
-    body=rows.map(r=>[q(r.title),q(r.channel),r.subs??"",r.views??"",r.likes??"",r.perf??"",r.boom??"",
+    head=["제목","채널","구독자","조회수","좋아요","성과도","성과도수치","떡상배수","떡상배수수치","게시일","형태","링크"];
+    body=rows.map(r=>[q(r.title),q(r.channel),r.subs??"",r.views??"",r.likes??"",
+      (ytGrade(r.perf,"perf")||{}).name??"", r.perf??"",
+      (ytGrade(r.boom,"boom")||{}).name??"", r.boom??"",
       q((r.published||"").slice(0,10)), (r.duration>0&&r.duration<=60)?"숏폼":"롱폼",
       q("https://www.youtube.com/watch?v="+r.videoId)].join(","));
   }else{
-    head=["채널","구독자","영상수","평균조회","성과도","링크"];
-    body=rows.map(r=>[q(r.title),r.subs??"",r.videoCount??"",r.avgViews??"",r.perf??"",
+    head=["채널","구독자","영상수","평균조회","성과도","성과도수치","링크"];
+    body=rows.map(r=>[q(r.title),r.subs??"",r.videoCount??"",r.avgViews??"",
+      (ytGrade(r.perf,"perf")||{}).name??"", r.perf??"",
       q("https://www.youtube.com/channel/"+r.channelId)].join(","));
   }
   const blob=new Blob(["﻿"+[head.join(",")].concat(body).join("\r\n")],{type:"text/csv;charset=utf-8"});
