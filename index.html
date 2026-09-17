@@ -389,6 +389,31 @@
         a.vt{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
           font-size:13.5px;line-height:1.45;color:var(--ink)}
         a.vt:hover{color:var(--brand)}
+        /* 검색 내역 */
+        #ytHistBtn{border:1px solid var(--line);background:#fff;color:#4a5160;border-radius:9px;
+          padding:9px 13px;cursor:pointer;font-size:13px;font-weight:600;transition:.12s}
+        #ytHistBtn:hover{border-color:#c6d5cd;color:var(--ink)}
+        #ytHistBtn.on{background:var(--brand);border-color:var(--brand);color:#fff}
+        #ytHistBtn .cnt{font-weight:400;opacity:.75;margin-left:2px}
+        #ytHistBtn .car{margin-left:4px;font-size:10px;display:inline-block;transition:.15s}
+        #ytHistBtn.on .car{transform:rotate(180deg)}
+        #ytHistory{border:1px solid var(--line);border-radius:12px;background:#fff;
+          padding:12px 14px;margin:0 0 12px;max-height:210px;overflow-y:auto}
+        #ytHistory .hchip{display:inline-flex;align-items:center;gap:6px;background:#fff;
+          border:1px solid var(--line);border-radius:999px;padding:6px 6px 6px 13px;font-size:12.5px;
+          cursor:pointer;margin:0 7px 7px 0;transition:.12s;white-space:nowrap}
+        #ytHistory .hchip:hover{border-color:var(--brand);color:var(--brand);background:#f4faf7}
+        #ytHistory .hchip .n{color:#9aa1ac;font-size:11.5px}
+        #ytHistory .hchip .x{color:#c0c5cc;font-size:14px;line-height:1;padding:0 4px;border-radius:50%}
+        #ytHistory .hchip .x:hover{color:#dc2626;background:#fee2e2}
+        #ytHistory .empty{color:var(--muted);font-size:12.5px;padding:4px 0}
+        /* 복원된 결과 알림 */
+        #ytSnap .note{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+          background:#fffaf0;border:1px solid #f3d9ae;color:#8a5a12;border-radius:10px;
+          padding:9px 13px;font-size:12.5px;margin-bottom:12px}
+        #ytSnap .note button{border:1px solid #e0bc82;background:#fff;color:#8a5a12;border-radius:8px;
+          padding:5px 12px;font-size:12.5px;font-weight:700;cursor:pointer}
+        #ytSnap .note button:hover{background:#fff4e0}
         /* 카드 보기 */
         .ycards{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:16px}
         .ycard{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;
@@ -473,6 +498,7 @@
             <option value="365">최근 1년</option>
           </select>
           <button id="ytRun" style="border:0;background:var(--brand);color:#fff;border-radius:9px;padding:9px 20px;cursor:pointer;font-weight:600">검색</button>
+          <button id="ytHistBtn" type="button">검색 내역 <span class="cnt"></span><span class="car">▾</span></button>
           <div class="seg" id="ytView" style="margin-left:6px">
             <button data-view="table" class="active" title="표로 보기">▤</button>
             <button data-view="card" title="카드로 보기">▦</button>
@@ -480,7 +506,8 @@
           <span class="count" id="ytQuota"></span>
         </div>
 
-        <div id="ytHistory" style="margin:2px 0 10px"></div>
+        <div id="ytHistory" hidden></div>
+        <div id="ytSnap"></div>
 
         <details id="ytFilterBox" style="margin-bottom:12px;border:1px solid var(--line);border-radius:10px;background:#fff" hidden>
           <summary style="cursor:pointer;padding:10px 14px;font-size:13.5px;font-weight:700;background:var(--card);border-radius:10px">
@@ -997,6 +1024,7 @@ function showTab(name){
   document.querySelectorAll("nav.tabs button[data-tab]").forEach(x=>
     x.classList.toggle("active", x.dataset.tab===name));
   if(name==="admin") loadMembers();
+  if(name==="youtube") ytHistLoad();      // 탭에 들어올 때 내역 칩을 채워둔다
 }
 
 // ---------- 관리자: 회원 승인 ----------
@@ -1211,7 +1239,6 @@ document.querySelectorAll("[data-goguide]").forEach(a=>a.onclick=(e)=>{
 // 유튜브 API 키는 서버(Edge Function)에만 있고, 브라우저는 결과만 받는다.
 let ytRows=[], ytMode="video_search", ytPane="video", ytView="table";
 let ytSort={key:"perf", asc:false};
-const YT_HIST="yt_history_v1";
 
 const YT_COLS_V=[
   {k:"save",    t:"",        w:36,  noSort:true},
@@ -1333,8 +1360,10 @@ function ytShowPane(name){
       ? "검색어 (예: 콜라겐, 갱년기 영양제)" : "채널 관련 키워드 (예: 건강정보, 약사)";
     ytRows=[]; ytSort={key:"perf",asc:false};
     document.getElementById("ytFilterBox").hidden=true;
+    document.getElementById("ytResults").className="";
     document.getElementById("ytResults").innerHTML='<div class="placeholder">검색어를 입력하고 <b>검색</b>을 누르세요.</div>';
-    ytRenderHistory();
+    ytSnapNote(null);
+    ytHistLoad();
   }
   if(name==="saved") ytLoadSaved();
   if(name==="analysis") ytRenderAnalysis();
@@ -1342,32 +1371,96 @@ function ytShowPane(name){
 }
 
 // ── 검색 내역 ──
-function ytHist(){ try{ return JSON.parse(localStorage.getItem(YT_HIST)||"[]"); }catch(e){ return []; } }
-function ytHistAdd(q, mode){
-  let h=ytHist().filter(x=>!(x.q===q && x.mode===mode));
-  h.unshift({q, mode, at:Date.now()});
-  h=h.slice(0,12);
-  try{ localStorage.setItem(YT_HIST, JSON.stringify(h)); }catch(e){}
+// 로컬이 아니라 DB(yt_history)에 결과까지 통째로 저장한다.
+// 24시간 공용 캐시가 만료돼도 본인 내역은 남고, 복원은 API를 부르지 않아 차감이 없다.
+let ytHistRows=[];
+async function ytHistLoad(){
+  if(!sb){ ytHistRows=[]; ytRenderHistory(); return; }
+  try{
+    const {data,error}=await sb.from("yt_history")
+      .select("id,mode,q,params,hits,updated_at")
+      .order("updated_at",{ascending:false}).limit(40);
+    if(error) throw error;
+    ytHistRows=data||[];
+  }catch(e){ ytHistRows=[]; }
   ytRenderHistory();
 }
+async function ytHistSave(q, mode, params, items){
+  if(!sb) return;
+  const prev=ytHistRows.find(x=>x.mode===mode && x.q===q);
+  try{
+    const {data:{user}}=await sb.auth.getUser();
+    if(!user) return;
+    await sb.from("yt_history").upsert({
+      member_id:user.id, mode, q, params, payload:{items:items||[]},
+      hits:(prev?.hits||0)+1, updated_at:new Date().toISOString(),
+    },{onConflict:"member_id,mode,q"});
+  }catch(e){ console.warn("검색 내역 저장 실패", e); }
+  ytHistLoad();
+}
+function ytHistToggle(open){
+  const box=document.getElementById("ytHistory"), btn=document.getElementById("ytHistBtn");
+  const on = open!==undefined ? open : box.hidden;
+  box.hidden=!on; btn.classList.toggle("on", on);
+}
 function ytRenderHistory(){
-  const box=document.getElementById("ytHistory"); if(!box) return;
-  const h=ytHist().filter(x=>x.mode===ytMode);
-  if(!h.length){ box.innerHTML=""; return; }
-  box.innerHTML=`<span style="font-size:12px;color:var(--muted);margin-right:6px">최근 검색</span>`
-    + h.map((x,i)=>`<span class="chip" data-hq="${esc(x.q)}">${esc(x.q)}<span class="x" data-hdel="${i}">×</span></span>`).join("")
-    + `<span style="font-size:11.5px;color:var(--muted);margin-left:4px">24시간 안에 다시 누르면 횟수가 차감되지 않습니다</span>`;
-  box.querySelectorAll("[data-hq]").forEach(c=>c.onclick=(e)=>{
+  const box=document.getElementById("ytHistory"), btn=document.getElementById("ytHistBtn");
+  if(!box||!btn) return;
+  const h=ytHistRows.filter(x=>x.mode===ytMode);
+  btn.querySelector(".cnt").textContent = h.length ? h.length : "";
+  if(!h.length){
+    box.innerHTML='<div class="empty">아직 검색한 키워드가 없습니다. 검색하면 여기에 쌓이고, 나중에 눌러서 그때 결과를 그대로 다시 볼 수 있습니다.</div>';
+    return;
+  }
+  box.innerHTML = h.map(x=>
+      `<span class="hchip" data-hid="${esc(x.id)}">${esc(x.q)}`
+      + `<span class="n">${x.hits}회</span>`
+      + `<span class="x" data-hdel="${esc(x.id)}" title="내역에서 지우기">×</span></span>`
+    ).join("")
+    + `<div style="font-size:11.5px;color:var(--muted);margin-top:4px">
+         키워드를 누르면 <b>그때 저장된 결과</b>가 바로 나옵니다 — 검색 횟수가 차감되지 않습니다.</div>`;
+  box.querySelectorAll("[data-hid]").forEach(c=>c.onclick=(e)=>{
     if(e.target.dataset.hdel!==undefined) return;
-    document.getElementById("ytQ").value=c.dataset.hq;
-    document.getElementById("ytRun").click();
+    ytHistRestore(c.dataset.hid);
   });
-  box.querySelectorAll("[data-hdel]").forEach(x=>x.onclick=(e)=>{
+  box.querySelectorAll("[data-hdel]").forEach(x=>x.onclick=async(e)=>{
     e.stopPropagation();
-    const all=ytHist(), target=h[+x.dataset.hdel];
-    localStorage.setItem(YT_HIST, JSON.stringify(all.filter(v=>!(v.q===target.q&&v.mode===target.mode))));
-    ytRenderHistory();
+    try{ await sb.from("yt_history").delete().eq("id", x.dataset.hdel); }catch(err){}
+    ytHistLoad();
   });
+}
+// 저장해 둔 결과를 그대로 되살린다 (API 호출 없음)
+async function ytHistRestore(id){
+  const box=document.getElementById("ytResults");
+  box.className=""; box.innerHTML='<div class="placeholder">저장된 결과를 불러오는 중…</div>';
+  ytHistToggle(false);
+  try{
+    const {data,error}=await sb.from("yt_history")
+      .select("q,params,payload,updated_at").eq("id",id).maybeSingle();
+    if(error||!data) throw error||new Error("내역을 찾을 수 없습니다.");
+    document.getElementById("ytQ").value=data.q;
+    const p=data.params||{};
+    if(p.order)  document.getElementById("ytOrder").value=p.order;
+    document.getElementById("ytPeriod").value = p.period || "";
+    ytRows=(data.payload||{}).items||[];
+    ytSort={key:"perf",asc:false};
+    ytfResetAll();
+    document.getElementById("ytFilterBox").hidden=!ytRows.length;
+    ytRenderChips(); ytRender();
+    ytSnapNote(data.updated_at);
+  }catch(e){
+    box.innerHTML=`<div class="placeholder" style="color:var(--warn)">${esc(e.message||String(e))}</div>`;
+  }
+}
+function ytSnapNote(at){
+  const n=document.getElementById("ytSnap"); if(!n) return;
+  if(!at){ n.innerHTML=""; return; }
+  const d=new Date(at);
+  const when=`${String(d.getFullYear()).slice(2)}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+  n.innerHTML=`<div class="note"><b>${when}</b>에 저장해 둔 결과입니다.
+      조회수·구독자는 그때 기준이라 지금과 다를 수 있습니다.
+      <button id="ytSnapRefresh">지금 다시 검색 (1회 차감)</button></div>`;
+  document.getElementById("ytSnapRefresh").onclick=()=>document.getElementById("ytRun").click();
 }
 
 // ── 결과 필터 ──
@@ -1626,15 +1719,17 @@ document.getElementById("ytRun").onclick=async()=>{
   if(!q){ document.getElementById("ytQ").focus(); return; }
   ytSort={key:"perf", asc:false};
   const days=parseInt(document.getElementById("ytPeriod").value,10);
-  const payload={ action:ytMode, q, region:"KR", order:document.getElementById("ytOrder").value };
+  const order=document.getElementById("ytOrder").value;
+  const payload={ action:ytMode, q, region:"KR", order };
   if(days) payload.publishedAfter=new Date(Date.now()-days*86400000).toISOString();
+  ytSnapNote(null);                       // 새로 검색하면 '저장된 결과' 알림을 지운다
 
   btn.disabled=true; box.innerHTML='<div class="placeholder">🔎 유튜브에서 찾는 중…</div>';
   try{
     const j=await ytCall(payload);
     ytRows=j.items||[];
     await ytLoadSavedIds();
-    ytHistAdd(q, ytMode);
+    ytHistSave(q, ytMode, { order, period:document.getElementById("ytPeriod").value }, ytRows);
     document.getElementById("ytFilterBox").hidden = !ytRows.length;
     ytRenderChips(); ytRender();
     if(!j.cached) ytLoadQuota();
@@ -1650,6 +1745,7 @@ document.getElementById("ytQ").addEventListener("keydown",e=>{ if(e.key==="Enter
   if(el) el.addEventListener(el.tagName==="SELECT"?"change":"input", ()=>{ if(ytRows.length) ytRender(); });
 });
 document.getElementById("ytfReset").onclick=ytfResetAll;
+document.getElementById("ytHistBtn").onclick=()=>ytHistToggle();
 document.querySelectorAll("#ytNav button").forEach(b=>b.onclick=()=>ytShowPane(b.dataset.yt));
 document.querySelectorAll("#ytView button").forEach(b=>b.onclick=()=>{
   ytView=b.dataset.view;
