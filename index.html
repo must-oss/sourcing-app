@@ -205,6 +205,7 @@
     <button class="active" data-tab="hsmoa">홈쇼핑 키워드</button>
     <button data-tab="sourcing">도매몰 소싱</button>
     <button data-tab="image" id="tabImage" hidden>이미지 생성</button>
+    <button data-tab="youtube">📺 유튜브 리서치</button>
     <button data-tab="coupang" id="tabCoupang" hidden style="margin-left:auto">📊 쿠팡 분석</button>
     <button data-tab="admin" id="tabAdmin" hidden>👤 관리자</button>
   </nav>
@@ -335,6 +336,67 @@
       </div>
     </section>
 
+    <!-- 탭: 유튜브 리서치 -->
+    <section id="tab-youtube" hidden>
+      <div class="hint">키워드로 유튜브 영상을 찾아 <b>성과도</b>와 <b>떡상배수</b>로 줄 세웁니다.
+        구독자가 적은데 조회수가 터진 영상 = 주제·제목·썸네일이 먹혔다는 신호입니다.<br>
+        같은 검색어는 <b>24시간 동안 저장된 결과</b>를 보여주며 이때는 횟수가 차감되지 않습니다.</div>
+
+      <div class="toolbar">
+        <input type="search" id="ytQ" placeholder="검색어 (예: 콜라겐, 갱년기 영양제)" style="min-width:240px;flex:1">
+        <select id="ytKind">
+          <option value="video_search">영상 찾기</option>
+          <option value="channel_search">채널 찾기</option>
+        </select>
+        <button id="ytRun" style="border:0;background:var(--brand);color:#fff;border-radius:8px;padding:9px 20px;cursor:pointer;font-weight:600">검색</button>
+        <span class="count" id="ytQuota"></span>
+      </div>
+
+      <div class="toolbar" id="ytFilters">
+        <label style="font-size:13px;color:var(--muted)">기간</label>
+        <select id="ytPeriod">
+          <option value="">전체</option>
+          <option value="7">최근 1주</option>
+          <option value="30">최근 1개월</option>
+          <option value="90">최근 3개월</option>
+          <option value="365">최근 1년</option>
+        </select>
+        <label style="font-size:13px;color:var(--muted)">정렬기준</label>
+        <select id="ytOrder">
+          <option value="relevance">관련도</option>
+          <option value="viewCount">조회수</option>
+          <option value="date">최신순</option>
+        </select>
+        <label style="font-size:13px;color:var(--muted)">형태</label>
+        <select id="ytForm">
+          <option value="">전체</option>
+          <option value="short">숏폼 (60초 이하)</option>
+          <option value="long">롱폼</option>
+        </select>
+        <label style="font-size:13px;color:var(--muted)">조회수 ≥</label>
+        <input type="number" id="ytMinViews" placeholder="제한없음" min="0" step="1000" style="width:100px">
+        <label style="font-size:13px;color:var(--muted)">구독자 ≤</label>
+        <input type="number" id="ytMaxSubs" placeholder="제한없음" min="0" step="1000" style="width:100px">
+        <button id="ytCsv" style="border:1px solid var(--brand);background:#fff;color:var(--brand);border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:600">CSV</button>
+      </div>
+
+      <div id="ytResults" class="placeholder">검색어를 입력하고 <b>검색</b>을 누르세요.</div>
+
+      <details style="margin-top:14px">
+        <summary style="cursor:pointer;color:var(--brand2);font-size:13px">성과도 · 떡상배수 보는 법</summary>
+        <div style="background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px;margin-top:8px;font-size:13px;line-height:1.8">
+          <b>성과도 = 조회수 ÷ 구독자수</b> — 구독자 규모 대비 얼마나 터졌는가 (채널 간 비교)<br>
+          <span style="color:var(--muted)">0.1 미만 실패작 · 0.1~0.5 보통 · 0.5~1 양호 ·
+          <b style="color:#b45309">1~5 우수(외부 유입 시작)</b> · <b style="color:#b45309">5~20 확실한 떡상</b> · 20+ 대박</span><br><br>
+          <b>떡상배수 = 조회수 ÷ 그 채널 평균 조회수</b> — 그 채널 안에서 이 영상만 잘된 정도 (채널 내 비교)<br>
+          <span style="color:var(--muted)">0.5 미만 실패작 · 0.5~1.5 평소 수준 · 1.5~3 잘된 편 ·
+          <b style="color:#b45309">3~10 히트작</b> · 10+ 이례적 대박</span><br><br>
+          <b>둘 다 높은 영상</b>이 진짜 참고할 만한 케이스입니다. 성과도만 높으면 원래 구독자가 적은 채널일 수 있고,
+          떡상배수만 높으면 원래 조회수가 낮은 채널일 수 있습니다.
+        </div>
+      </details>
+    </section>
+
     <!-- 탭: 쿠팡 키워드 경쟁분석 (관리자 전용) -->
     <section id="tab-coupang" hidden>
       <div class="hint">키워드별로 쿠팡 검색 상위 <b>28개(광고 제외)</b>를 모아 <b>실제 상품이 몇 개인지</b> 셉니다.
@@ -430,7 +492,7 @@
       <div class="tablewrap">
         <table id="memberTable">
           <thead><tr>
-            <th>이름</th><th>연락처</th><th>이메일</th><th class="c">개인정보<br>동의</th><th class="c">상태</th><th class="c">신청일</th><th class="c">관리</th>
+            <th>이름</th><th>연락처</th><th>이메일</th><th class="c">개인정보<br>동의</th><th class="c">등급</th><th class="c">상태</th><th class="c">신청일</th><th class="c">관리</th>
           </tr></thead>
           <tbody></tbody>
         </table>
@@ -580,6 +642,7 @@ async function startApp(userLabel, isAdmin){
   IS_ADMIN = !!isAdmin;
   DATA = await loadData();
   renderMeta(); fillFilters(); renderSchedule(); renderKeywords();
+  ytLoadQuota();                                   // 유튜브 남은 횟수 표시
 }
 
 // 이미지 생성 탭 사용 여부 — false 로 바꾸면 탭이 숨겨집니다.
@@ -594,7 +657,7 @@ let IS_ADMIN = false;
 
 function showTab(name){
   if(ADMIN_TABS.includes(name) && !IS_ADMIN){ name = "hsmoa"; }
-  ["hsmoa","sourcing","image","coupang","admin"].forEach(t=>{
+  ["hsmoa","sourcing","image","youtube","coupang","admin"].forEach(t=>{
     const s=document.getElementById("tab-"+t); if(s) s.hidden = (t!==name);
   });
   document.querySelectorAll("nav.tabs button[data-tab]").forEach(x=>
@@ -605,9 +668,9 @@ function showTab(name){
 // ---------- 관리자: 회원 승인 ----------
 async function loadMembers(){
   const tb=document.querySelector("#memberTable tbody");
-  tb.innerHTML=`<tr><td colspan="7" class="empty">불러오는 중…</td></tr>`;
+  tb.innerHTML=`<tr><td colspan="8" class="empty">불러오는 중…</td></tr>`;
   const {data,error}=await sb.from("members").select("*").order("created_at",{ascending:false});
-  if(error){ tb.innerHTML=`<tr><td colspan="7" class="empty">오류: ${esc(error.message)}</td></tr>`; return; }
+  if(error){ tb.innerHTML=`<tr><td colspan="8" class="empty">오류: ${esc(error.message)}</td></tr>`; return; }
   const rows=data||[];
   const pending=rows.filter(m=>m.status!=="approved").length;
   document.getElementById("memCount").textContent = `총 ${rows.length}명 · 대기 ${pending}명`;
@@ -622,11 +685,20 @@ async function loadMembers(){
     const pv = m.privacy_agreed_at
       ? `<span title="${esc(m.privacy_agreed_at)} (v${esc(m.privacy_version||"-")})" style="color:var(--accent);font-weight:600">동의</span>`
       : `<span style="color:var(--muted)">-</span>`;
+    const tier = m.tier || "free";
+    const tierSel = `<select data-tier="${m.id}" style="padding:3px 6px;font-size:12px">`
+      + ["free","silver","gold"].map(t=>`<option value="${t}"${t===tier?" selected":""}>${t.toUpperCase()}</option>`).join("")
+      + `</select>`;
     return `<tr><td>${esc(m.name)}</td><td>${esc(m.phone)}</td><td>${esc(m.email)}</td>`
       +`<td class="c">${pv}</td>`
+      +`<td class="c">${tierSel}</td>`
       +`<td class="c">${badge}</td><td class="c">${esc(d)}</td><td class="c">${btn}</td></tr>`;
-  }).join("") : `<tr><td colspan="7" class="empty">가입 신청한 회원이 없습니다.</td></tr>`;
+  }).join("") : `<tr><td colspan="8" class="empty">가입 신청한 회원이 없습니다.</td></tr>`;
   tb.querySelectorAll("button[data-act]").forEach(b=>b.onclick=()=>setMemberStatus(b.dataset.id, b.dataset.act==="approve"?"approved":"pending"));
+  tb.querySelectorAll("select[data-tier]").forEach(s=>s.onchange=async()=>{
+    const {error}=await sb.from("members").update({tier:s.value}).eq("id",s.dataset.tier);
+    if(error) alert("등급 변경 실패: "+error.message);
+  });
 }
 async function setMemberStatus(id, status){
   const {error}=await sb.from("members").update({status}).eq("id",id);
@@ -773,6 +845,216 @@ document.querySelectorAll("nav.tabs button[data-tab]").forEach(b=>b.onclick=()=>
   if(b.disabled) return;
   showTab(b.dataset.tab);
 });
+
+// ---------- 유튜브 리서치 ----------
+// 유튜브 API 키는 서버(Edge Function)에만 있고, 브라우저는 결과만 받는다.
+let ytRows=[], ytMode="video_search";
+let ytSort={key:"perf", asc:false};
+
+const YT_COLS_V=[
+  {k:"thumb",   t:"",        w:74,  noSort:true},
+  {k:"title",   t:"제목",     w:null, align:"left"},
+  {k:"channel", t:"채널",     w:130, align:"left"},
+  {k:"subs",    t:"구독자",   w:80,  desc:true},
+  {k:"views",   t:"조회수",   w:84,  desc:true},
+  {k:"likes",   t:"좋아요",   w:72,  desc:true},
+  {k:"perf",    t:"성과도",   w:70,  desc:true},
+  {k:"boom",    t:"떡상배수", w:76,  desc:true},
+  {k:"published", t:"게시일", w:80,  desc:true},
+];
+const YT_COLS_C=[
+  {k:"thumb",     t:"",        w:56,  noSort:true},
+  {k:"title",     t:"채널",     w:null, align:"left"},
+  {k:"desc",      t:"설명",     w:null, align:"left", noSort:true},
+  {k:"subs",      t:"구독자",   w:84,  desc:true},
+  {k:"videoCount",t:"영상수",   w:76,  desc:true},
+  {k:"avgViews",  t:"평균조회", w:90,  desc:true},
+  {k:"perf",      t:"성과도",   w:76,  desc:true},
+];
+
+const ytNum = n => (n==null||n==="") ? "-" : Number(n).toLocaleString();
+const ytDate = s => s ? String(s).slice(0,10).replace(/-/g,".").slice(2) : "-";
+function ytAgo(s){
+  if(!s) return "";
+  const d=Math.floor((Date.now()-new Date(s).getTime())/86400000);
+  return d<1?"오늘":d<30?`${d}일 전`:d<365?`${Math.floor(d/30)}개월 전`:`${Math.floor(d/365)}년 전`;
+}
+// 성과도·떡상배수 강조 (기준은 성과도 1↑ / 떡상배수 3↑ 부터 의미 있음)
+function ytHeat(v, kind){
+  if(v==null) return "";
+  const hot = kind==="perf" ? (v>=5?2:v>=1?1:0) : (v>=10?2:v>=3?1:0);
+  return hot===2 ? "font-weight:700;color:#b45309;background:#fef3e2"
+       : hot===1 ? "font-weight:600;color:#b45309" : "";
+}
+
+async function ytCall(payload){
+  if(!sb) throw new Error("로그인이 필요합니다.");
+  const { data:{ session } } = await sb.auth.getSession();
+  if(!session) throw new Error("로그인이 필요합니다.");
+  const r = await fetch(`${SUPABASE_URL}/functions/v1/youtube`, {
+    method:"POST",
+    headers:{ "Authorization":`Bearer ${session.access_token}`, "Content-Type":"application/json" },
+    body: JSON.stringify(payload),
+  });
+  const j = await r.json().catch(()=>({}));
+  if(!r.ok || j.error) throw new Error(j.error || `요청 실패 (${r.status})`);
+  return j;
+}
+
+async function ytLoadQuota(){
+  const el=document.getElementById("ytQuota");
+  try{
+    const q=await ytCall({action:"quota"});
+    if(q.isAdmin){ el.textContent="관리자 · 한도 없음"; return; }
+    const L=q.limits||{}, U=q.used||{};
+    const left=(k)=>Math.max(0,(L[k]||0)-(U[k]||0));
+    el.textContent=`${(q.tier||"free").toUpperCase()} · 영상 ${left("video_search")}/${L.video_search||0}회 · 채널 ${left("channel_search")}/${L.channel_search||0}회 남음`;
+  }catch(e){ el.textContent=""; }
+}
+
+function ytSortRows(rows){
+  const cols = ytMode==="video_search" ? YT_COLS_V : YT_COLS_C;
+  const {key,asc}=ytSort, sign=asc?1:-1;
+  const out=rows.slice();
+  out.sort((a,b)=>{
+    let x=a[key], y=b[key];
+    if(key==="published"){ x=x?new Date(x).getTime():0; y=y?new Date(y).getTime():0; }
+    if(x==null&&y==null) return 0;
+    if(x==null) return 1;
+    if(y==null) return -1;
+    const c = (typeof x==="string"||typeof y==="string")
+      ? String(x).localeCompare(String(y),"ko") : (x-y);
+    return c*sign;
+  });
+  return out;
+}
+function ytSetSort(key){
+  if(ytSort.key===key) ytSort.asc=!ytSort.asc;
+  else{
+    const cols=ytMode==="video_search"?YT_COLS_V:YT_COLS_C;
+    const col=cols.find(c=>c.k===key);
+    ytSort={key, asc:!(col&&col.desc)};
+  }
+  ytRender();
+}
+
+function ytFiltered(){
+  const form=document.getElementById("ytForm").value;
+  const minV=parseInt(document.getElementById("ytMinViews").value,10);
+  const maxS=parseInt(document.getElementById("ytMaxSubs").value,10);
+  return ytRows.filter(r=>{
+    if(ytMode==="video_search"){
+      if(form==="short" && !(r.duration>0 && r.duration<=60)) return false;
+      if(form==="long"  && !(r.duration>60)) return false;
+    }
+    if(!isNaN(minV) && (r.views||0) < minV) return false;
+    if(!isNaN(maxS) && (r.subs||0) > maxS) return false;
+    return true;
+  });
+}
+
+function ytRender(){
+  const box=document.getElementById("ytResults");
+  const cols = ytMode==="video_search" ? YT_COLS_V : YT_COLS_C;
+  const rows = ytSortRows(ytFiltered());
+  if(!rows.length){ box.innerHTML='<div class="placeholder">조건에 맞는 결과가 없습니다.</div>'; return; }
+
+  const th = cols.map(c=>{
+    if(c.noSort) return `<th style="${c.w?`width:${c.w}px;`:""}"></th>`;
+    const active=ytSort.key===c.k, arrow=active?(ytSort.asc?"↑":"↓"):"↕";
+    const style=(c.w?`width:${c.w}px;`:"")+(c.align==="right"?"text-align:right;":"");
+    return `<th class="sortable${active?" active":""}${c.align?"":" c"}" style="${style}" data-ytsort="${c.k}">${c.t} <span class="arrow">${arrow}</span></th>`;
+  }).join("");
+
+  const tr = rows.map(r=>{
+    if(ytMode!=="video_search"){
+      return `<tr>`
+        +`<td>${r.thumb?`<img src="${esc(r.thumb)}" style="width:40px;height:40px;border-radius:50%">`:""}</td>`
+        +`<td><a href="https://www.youtube.com/channel/${esc(r.channelId)}" target="_blank"><b>${esc(r.title)}</b></a></td>`
+        +`<td style="color:var(--muted);font-size:12px">${esc(r.desc||"")}</td>`
+        +`<td class="c">${ytNum(r.subs)}</td><td class="c">${ytNum(r.videoCount)}</td>`
+        +`<td class="c">${ytNum(r.avgViews)}</td>`
+        +`<td class="c" style="${ytHeat(r.perf,"perf")}">${r.perf??"-"}</td></tr>`;
+    }
+    const isShort = r.duration>0 && r.duration<=60;
+    const mmss = r.duration ? `${Math.floor(r.duration/60)}:${String(r.duration%60).padStart(2,"0")}` : "";
+    return `<tr>`
+      +`<td><a href="https://www.youtube.com/watch?v=${esc(r.videoId)}" target="_blank">`
+        +`<img src="${esc(r.thumb)}" style="width:64px;height:36px;object-fit:cover;border-radius:4px"></a></td>`
+      +`<td><a href="https://www.youtube.com/watch?v=${esc(r.videoId)}" target="_blank">${esc(r.title)}</a>`
+        +` <span style="font-size:11px;color:var(--muted)">${isShort?"🩳숏폼":mmss}</span></td>`
+      +`<td style="font-size:12.5px">${esc(r.channel||"")}</td>`
+      +`<td class="c">${ytNum(r.subs)}</td>`
+      +`<td class="c">${ytNum(r.views)}</td>`
+      +`<td class="c" style="color:var(--muted)">${ytNum(r.likes)}</td>`
+      +`<td class="c" style="${ytHeat(r.perf,"perf")}">${r.perf??"-"}</td>`
+      +`<td class="c" style="${ytHeat(r.boom,"boom")}">${r.boom??"-"}</td>`
+      +`<td class="c" style="color:var(--muted)" title="${esc(r.published||"")}">${ytAgo(r.published)}</td>`
+      +`</tr>`;
+  }).join("");
+
+  box.innerHTML=`<div class="tablewrap"><table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></div>
+    <div style="font-size:12.5px;color:var(--muted);margin-top:8px">
+      ${rows.length}개 표시 (수집 ${ytRows.length}개) · 열 제목을 눌러 정렬 ·
+      <b style="color:#b45309">주황색</b>이 눈여겨볼 영상입니다.
+    </div>`;
+  box.querySelectorAll("th[data-ytsort]").forEach(h=>h.onclick=()=>ytSetSort(h.dataset.ytsort));
+}
+
+document.getElementById("ytRun").onclick=async()=>{
+  const q=document.getElementById("ytQ").value.trim();
+  const box=document.getElementById("ytResults"), btn=document.getElementById("ytRun");
+  if(!q){ document.getElementById("ytQ").focus(); return; }
+  ytMode=document.getElementById("ytKind").value;
+  ytSort={key:"perf", asc:false};
+  const days=parseInt(document.getElementById("ytPeriod").value,10);
+  const payload={ action:ytMode, q, region:"KR", order:document.getElementById("ytOrder").value };
+  if(days) payload.publishedAfter=new Date(Date.now()-days*86400000).toISOString();
+
+  btn.disabled=true; box.innerHTML='<div class="placeholder">🔎 유튜브에서 찾는 중…</div>';
+  try{
+    const j=await ytCall(payload);
+    ytRows=j.items||[];
+    ytRender();
+    if(j.cached){
+      const el=document.getElementById("ytQuota");
+      el.textContent="💾 저장된 결과 (횟수 차감 없음) · "+el.textContent.replace(/^💾[^·]*· /,"");
+    }else ytLoadQuota();
+  }catch(e){
+    box.innerHTML=`<div class="placeholder" style="color:var(--warn)">${esc(e.message||String(e))}</div>`;
+  }
+  btn.disabled=false;
+};
+document.getElementById("ytQ").addEventListener("keydown",e=>{ if(e.key==="Enter") document.getElementById("ytRun").click(); });
+["ytForm","ytMinViews","ytMaxSubs"].forEach(id=>{
+  const el=document.getElementById(id);
+  el.addEventListener(el.tagName==="SELECT"?"change":"input", ()=>{ if(ytRows.length) ytRender(); });
+});
+document.getElementById("ytKind").onchange=()=>{
+  document.getElementById("ytFilters").style.opacity =
+    document.getElementById("ytKind").value==="video_search" ? "1" : "0.55";
+};
+document.getElementById("ytCsv").onclick=()=>{
+  const rows=ytSortRows(ytFiltered());
+  if(!rows.length){ alert("저장할 결과가 없습니다."); return; }
+  const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+  let head, body;
+  if(ytMode==="video_search"){
+    head=["제목","채널","구독자","조회수","좋아요","성과도","떡상배수","게시일","형태","링크"];
+    body=rows.map(r=>[q(r.title),q(r.channel),r.subs??"",r.views??"",r.likes??"",r.perf??"",r.boom??"",
+      q((r.published||"").slice(0,10)), (r.duration>0&&r.duration<=60)?"숏폼":"롱폼",
+      q("https://www.youtube.com/watch?v="+r.videoId)].join(","));
+  }else{
+    head=["채널","구독자","영상수","평균조회","성과도","링크"];
+    body=rows.map(r=>[q(r.title),r.subs??"",r.videoCount??"",r.avgViews??"",r.perf??"",
+      q("https://www.youtube.com/channel/"+r.channelId)].join(","));
+  }
+  const blob=new Blob(["﻿"+[head.join(",")].concat(body).join("\r\n")],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=`유튜브리서치_${new Date().toISOString().slice(0,10).replace(/-/g,"")}.csv`;
+  a.click(); URL.revokeObjectURL(a.href);
+};
 
 // ---------- 쿠팡 키워드 경쟁분석 (관리자 전용) ----------
 // 한 키워드의 상위 N개(광고 제외) 카드를 '실제 상품' 단위로 묶는다.
