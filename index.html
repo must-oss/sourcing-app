@@ -399,7 +399,10 @@
           font-size:18px;font-weight:700;color:#9aa1ac}
         .anaid .nm{font-size:17px;font-weight:800;letter-spacing:-.02em;line-height:1.3;word-break:break-all}
         .anaid .sub{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px}
-        .anaid .cache{color:var(--accent)}
+        .anaid .asof{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+        #ytAnaRefresh{display:inline-flex;align-items:center;border:1px solid var(--line);background:#fff;
+          color:#4a5160;border-radius:8px;padding:5px 11px;font-size:12px;font-weight:600;cursor:pointer;transition:.12s}
+        #ytAnaRefresh:hover{border-color:var(--brand);color:var(--brand)}
         .anagrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
         .astat{background:#fff;border:1px solid var(--line);border-radius:10px;padding:13px 15px;
           display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -584,7 +587,7 @@
       <!-- ── 채널 분석 ── -->
       <div id="ytPaneAnalysis" hidden>
         <div class="hint">등록한 채널을 눌러 <b>최근 영상 50개</b>로 어떤 주제가 먹혔는지 봅니다.
-          <span style="color:var(--accent)">채널 조회는 검색 횟수를 쓰지 않습니다</span></div>
+          <span style="color:var(--accent)">한 번 불러온 데이터는 계속 남습니다 — <b>최신화</b>를 누를 때만 채널 갱신 1회가 차감됩니다</span></div>
 
         <div class="toolbar">
           <input type="search" id="ytChAdd" placeholder="채널 주소 붙여넣기 (youtube.com/@이름) 또는 채널명"
@@ -1514,6 +1517,11 @@ async function ytHistRestore(id){
   }
 }
 let ytSnapAt=null;
+function ytWhen(at){
+  if(!at) return "";
+  const d=new Date(at);
+  return `${String(d.getFullYear()).slice(2)}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+}
 function ytSnapNote(at){
   ytSnapAt=at||null;
   const n=document.getElementById("ytSnap"); if(!n) return;
@@ -1922,13 +1930,14 @@ async function ytChannelAdd(){
 document.getElementById("ytChAddBtn").onclick=ytChannelAdd;
 document.getElementById("ytChAdd").addEventListener("keydown",e=>{ if(e.key==="Enter") ytChannelAdd(); });
 
-async function ytAnalyze(ch){
+let ytAnaCh=null;                                  // 최신화 버튼이 다시 부를 채널
+async function ytAnalyze(ch, force){
   const body=document.getElementById("ytAnalysisBody");
-  ytChSel=ch.channel_id;
+  ytChSel=ch.channel_id; ytAnaCh=ch;
   ytRenderAnalysis(true);
-  body.innerHTML=`<div class="placeholder">📊 <b>${esc(ch.title||"")}</b> 영상을 가져오는 중…</div>`;
+  body.innerHTML=`<div class="placeholder">${force?"최신 데이터를 받아오는 중…":`<b>${esc(ch.title||"")}</b> 영상을 가져오는 중…`}</div>`;
   try{
-    const j=await ytCall({action:"channel_videos", channelId:ch.channel_id});
+    const j=await ytCall({action:"channel_videos", channelId:ch.channel_id, force:!!force});
     ytAnaRows=j.items||[];
     ytAnaSort={key:"boom", asc:false};
     if(!ytAnaRows.length){ body.innerHTML='<div class="placeholder">이 채널에서 가져올 영상이 없습니다.</div>'; return; }
@@ -1939,14 +1948,15 @@ async function ytAnalyze(ch){
         avg_views:j.channel.avgViews, last_sync:new Date().toISOString()
       }).eq("member_id",user.id).eq("channel_id",ch.channel_id);
     }catch(e){}
-    ytAnaRender(j.channel, j.cached);
+    ytAnaRender(j.channel, j.cached, j.cachedAt);
     ytRenderAnalysis(true);
+    if(!j.cached) ytLoadQuota();
   }catch(e){
     body.innerHTML=`<div class="placeholder" style="color:var(--warn)">${esc(e.message||String(e))}</div>`;
   }
 }
 
-function ytAnaRender(ch, cached){
+function ytAnaRender(ch, cached, cachedAt){
   const body=document.getElementById("ytAnalysisBody");
   const {key,asc}=ytAnaSort, sign=asc?1:-1;
   const rows=ytAnaRows.slice().sort((a,b)=>{
@@ -2000,8 +2010,10 @@ function ytAnaRender(ch, cached){
         </div>
         <div class="sub">
           <a href="https://www.youtube.com/channel/${esc(ch.id)}" target="_blank">채널 열기 ↗</a>
-          ${cached?'<span class="cache">저장된 결과 · 24시간 이내</span>':''}
+          <button id="ytAnaRefresh" title="유튜브에서 지금 숫자로 다시 받아옵니다 (채널 갱신 1회 차감)">
+            <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>최신화</button>
         </div>
+        <div class="asof">${cachedAt?`${ytWhen(cachedAt)} 기준`:"방금 받아옴"}</div>
       </div>
       <div class="anagrid">
         ${card("구독자", ytNumK(ch.subs)+"명")}
@@ -2033,6 +2045,12 @@ function ytAnaRender(ch, cached){
       떡상배수는 <b>이 채널 최근 ${ytAnaRows.length}개 평균</b> 기준입니다.
       <b style="color:#ea580c">HOT</b> 이상인 영상의 주제·제목·썸네일이 이 채널에서 먹힌 방식입니다.
     </div>`;
+  const rf=document.getElementById("ytAnaRefresh");
+  if(rf) rf.onclick=()=>{
+    if(!ytAnaCh) return;
+    if(!confirm("유튜브에서 지금 숫자로 다시 받아옵니다.\n채널 갱신 횟수가 1회 차감됩니다. 계속할까요?")) return;
+    ytAnalyze(ytAnaCh, true);
+  };
   body.querySelectorAll("th[data-anasort]").forEach(h=>h.onclick=(e)=>{
     if(e.target.classList.contains("qmark")) return;
     const k=h.dataset.anasort;
