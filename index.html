@@ -586,7 +586,7 @@
 
       <!-- ── 채널 분석 ── -->
       <div id="ytPaneAnalysis" hidden>
-        <div class="hint">등록한 채널을 눌러 <b>최근 영상 50개</b>로 어떤 주제가 먹혔는지 봅니다.
+        <div class="hint">등록한 채널의 <b>영상 전체</b>를 훑어 어떤 주제가 먹혔는지 봅니다.
           <span style="color:var(--accent)">한 번 불러온 데이터는 계속 남습니다 — <b>최신화</b>를 누를 때만 채널 갱신 1회가 차감됩니다</span></div>
 
         <div class="toolbar">
@@ -1965,9 +1965,13 @@ function ytAnaRender(ch, cached, cachedAt){
     if(x==null&&y==null) return 0; if(x==null) return 1; if(y==null) return -1;
     return ((typeof x==="string"||typeof y==="string")?String(x).localeCompare(String(y),"ko"):(x-y))*sign;
   });
-  const best=ytAnaRows.reduce((m,r)=>(!m||r.views>m.views)?r:m, null);
-  const shorts=ytAnaRows.filter(r=>r.duration>0&&r.duration<=60).length;
-  const hot=ytAnaRows.filter(r=>ytGradeIdx(r.boom,"boom")>=3).length;
+  // 서버가 채널 영상 전체로 계산해 보내준 값을 쓴다.
+  // (값이 없으면 예전에 저장된 캐시라 표에 있는 것만으로 계산)
+  const scope = ch.analyzed || ytAnaRows.length;
+  const best  = ch.bestVideo || ytAnaRows.reduce((m,r)=>(!m||r.views>m.views)?r:m, null);
+  const shorts= ch.shorts ?? ytAnaRows.filter(r=>r.duration>0&&r.duration<=60).length;
+  const longs = ch.longs  ?? (ytAnaRows.length-shorts);
+  const hot   = ch.hitCount ?? ytAnaRows.filter(r=>ytGradeIdx(r.boom,"boom")>=3).length;
   const days=ch.publishedAt?Math.floor((Date.now()-new Date(ch.publishedAt).getTime())/86400000):null;
   const chPerf=ch.subs?+((ch.avgViews||0)/ch.subs).toFixed(2):null;
   // 라벨은 왼쪽, 값은 오른쪽 — 한 줄에 하나씩이라 눈이 세로로 훑기 쉽다
@@ -2021,13 +2025,13 @@ function ytAnaRender(ch, cached, cachedAt){
         ${card("채널 개설", days!=null?`${ytNum(days)}일 경과`:"-", ch.publishedAt?String(ch.publishedAt).slice(0,10).replace(/-/g,"."):"")}
         ${card("누적 조회수", ytNumK(ch.totalViews)+"회")}
         ${card("평균 좋아요", ytNum(ch.avgLikes)+"개")}
-        ${card("평균 조회수", ytNumK(ch.avgViews)+"회", `최근 ${ytAnaRows.length}개`)}
+        ${card("평균 조회수", ytNumK(ch.avgViews)+"회", `영상 ${ytNum(scope)}개 기준`)}
         ${gcard("채널 성과도", chPerf, "perf")}
         ${card("히트작", `<span style="color:#ea580c">${hot}</span>개`, "HOT 이상")}
-        ${card("숏폼 / 롱폼", `${shorts} / ${ytAnaRows.length-shorts}`)}
+        ${card("숏폼 / 롱폼", `${ytNum(shorts)} / ${ytNum(longs)}`)}
       </div>
     </div>
-    ${best?`<div style="font-size:13px;color:var(--muted);margin-bottom:10px">최고 조회수 —
+    ${best?`<div style="font-size:13px;color:var(--muted);margin-bottom:10px">역대 최고 조회수 —
       <a href="https://www.youtube.com/watch?v=${esc(best.videoId)}" target="_blank"><b>${esc(best.title)}</b></a>
       (${ytNum(best.views)}회)</div>`:""}
     <div class="tablewrap"><table><thead><tr><th style="width:132px"></th>${th}</tr></thead><tbody>`
@@ -2042,7 +2046,9 @@ function ytAnaRender(ch, cached, cachedAt){
       }).join("")
     + `</tbody></table></div>
     <div style="font-size:12.5px;color:var(--muted);margin-top:9px">
-      떡상배수는 <b>이 채널 최근 ${ytAnaRows.length}개 평균</b> 기준입니다.
+      위 지표는 이 채널 영상 <b>${ytNum(scope)}개 전체</b>로 계산했고, 표에는
+      <b>조회수 상위 ${ytNum(ytAnaRows.length)}개</b>만 보여줍니다.
+      떡상배수는 채널 평균 조회수 대비이며,
       <b style="color:#ea580c">HOT</b> 이상인 영상의 주제·제목·썸네일이 이 채널에서 먹힌 방식입니다.
     </div>`;
   const rf=document.getElementById("ytAnaRefresh");
