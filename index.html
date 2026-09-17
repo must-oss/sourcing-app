@@ -416,8 +416,8 @@
         }
         /* 결과가 길어도 열 제목이 따라오도록 — 표 안에서 세로 스크롤한다.
            페이지를 끝까지 내려도 열 제목이 상단 탭 아래에 걸리도록 높이를 잡았다. */
-        #tab-youtube .tablewrap{max-height:calc(100vh - 210px);overflow:auto}
-        #tab-youtube .tablewrap th{top:0;z-index:3;box-shadow:inset 0 -1px 0 var(--line)}
+        #tab-youtube .tablewrap{max-height:none;overflow:visible;border-radius:12px}
+        #tab-youtube .tablewrap th{top:93px;z-index:3;box-shadow:inset 0 -1px 0 var(--line)}
         /* 검색 내역 */
         #ytHistBtn{border:1px solid var(--line);background:#fff;color:#4a5160;border-radius:9px;
           padding:9px 13px;cursor:pointer;font-size:13px;font-weight:600;transition:.12s}
@@ -1747,16 +1747,9 @@ function ytRenderCards(rows){
         </div>
       </div>`).join("")+`</div>`;
   }
-  box.insertAdjacentHTML("beforeend", ytLegend(rows.length));
   box.querySelectorAll(".ytstar").forEach(b=>b.onclick=(e)=>{ e.preventDefault(); ytToggleSave(rows[+b.dataset.i]); });
 }
-function ytLegend(n){
-  return `<div style="font-size:12.5px;color:var(--muted);margin-top:12px;line-height:1.9">
-      ${n}개 표시 ·
-      ${YT_GRADES.map(g=>`<span style="${g.css};padding:1px 6px;font-size:12px">${g.name}</span>`).join(`<span style="color:#c8ccd2">→</span>`)}
-      <span style="margin-left:6px"><b style="color:#ea580c">HOT</b>·<b style="color:#dc2626">VIRAL</b> 주목 · ⭐로 수집</span>
-    </div>`;
-}
+
 
 function ytRender(){
   const box=document.getElementById("ytResults");
@@ -1810,8 +1803,7 @@ function ytRender(){
       +`</tr>`;
   }).join("");
 
-  box.innerHTML=`<div class="tablewrap"><table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></div>`
-    + ytLegend(rows.length);
+  box.innerHTML=`<div class="tablewrap"><table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></div>`;
   box.querySelectorAll("th[data-ytsort]").forEach(h=>h.onclick=(e)=>{
     if(e.target.classList.contains("qmark")) return;
     ytSetSort(h.dataset.ytsort);
