@@ -389,6 +389,10 @@
         a.vt{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
           font-size:13.5px;line-height:1.45;color:var(--ink)}
         a.vt:hover{color:var(--brand)}
+        /* 결과가 길어도 열 제목이 따라오도록 — 표 안에서 세로 스크롤한다.
+           페이지를 끝까지 내려도 열 제목이 상단 탭 아래에 걸리도록 높이를 잡았다. */
+        #tab-youtube .tablewrap{max-height:calc(100vh - 210px);overflow:auto}
+        #tab-youtube .tablewrap th{top:0;z-index:3;box-shadow:inset 0 -1px 0 var(--line)}
         /* 검색 내역 */
         #ytHistBtn{border:1px solid var(--line);background:#fff;color:#4a5160;border-radius:9px;
           padding:9px 13px;cursor:pointer;font-size:13px;font-weight:600;transition:.12s}
