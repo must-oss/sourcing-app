@@ -601,6 +601,44 @@
 
         <div id="ytChChips" style="background:var(--card);border:1px solid var(--line);border-radius:10px;
              padding:11px 13px;margin-bottom:14px;max-height:190px;overflow-y:auto"></div>
+
+        <details id="ytAnaFilterBox" style="margin-bottom:12px;border:1px solid var(--line);border-radius:10px;background:#fff" hidden>
+          <summary style="cursor:pointer;padding:10px 14px;font-size:13.5px;font-weight:700;background:var(--card);border-radius:10px">
+            🔎 영상 필터 <span class="count" id="ytafCount" style="font-weight:400"></span>
+            <span style="font-weight:400;font-size:12px;color:var(--accent);margin-left:6px">갱신 횟수 차감 없음</span>
+          </summary>
+          <div style="padding:8px 14px 0;font-size:12px;color:var(--muted)">
+            이미 받아온 영상에서 걸러냅니다. 숏폼만 보거나, 조회수 구간을 정해 볼 때 씁니다.
+          </div>
+          <div style="padding:14px" class="ytf">
+            <div class="row"><label>조회수</label>
+              <input type="number" id="ytafViewsMin" placeholder="최소"> ~
+              <input type="number" id="ytafViewsMax" placeholder="최대"></div>
+            <div class="row"><label>좋아요</label>
+              <input type="number" id="ytafLikesMin" placeholder="최소 이상"></div>
+            <div class="row"><label>형태</label>
+              <select id="ytafForm">
+                <option value="">전체</option>
+                <option value="short">숏폼만 (60초 이하)</option>
+                <option value="long">롱폼만 (60초 초과)</option>
+              </select></div>
+            <div class="row"><label>기간</label>
+              <select id="ytafDays">
+                <option value="">전체</option>
+                <option value="30">최근 1개월</option>
+                <option value="90">최근 3개월</option>
+                <option value="365">최근 1년</option>
+                <option value="1095">최근 3년</option>
+              </select></div>
+            <div class="row" style="grid-column:1/-1"><label>성과도</label><span id="ytafPerf"></span></div>
+            <div class="row" style="grid-column:1/-1"><label>떡상배수</label><span id="ytafBoom"></span></div>
+            <div class="row" style="grid-column:1/-1"><label>제목</label>
+              <input type="search" id="ytafText" placeholder="제목에서 찾기" style="min-width:200px;flex:1">
+              <button id="ytafReset" style="border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 13px;cursor:pointer">필터 전체 해제</button>
+            </div>
+          </div>
+        </details>
+
         <div id="ytAnalysisBody"></div>
       </div>
     </section>
@@ -1940,6 +1978,13 @@ async function ytAnalyze(ch, force){
     const j=await ytCall({action:"channel_videos", channelId:ch.channel_id, force:!!force});
     ytAnaRows=j.items||[];
     ytAnaSort={key:"boom", asc:false};
+    ["ytafViewsMin","ytafViewsMax","ytafLikesMin","ytafText"].forEach(id=>{
+      const el=document.getElementById(id); if(el) el.value="";
+    });
+    const _f=document.getElementById("ytafForm"); if(_f) _f.value="";
+    const _d=document.getElementById("ytafDays");  if(_d) _d.value="";
+    [0,1,2,3,4].forEach(i=>{ ytafPerfOn.add(i); ytafBoomOn.add(i); });
+    ytAnaChips();
     if(!ytAnaRows.length){ body.innerHTML='<div class="placeholder">이 채널에서 가져올 영상이 없습니다.</div>'; return; }
     try{
       const { data:{ user } }=await sb.auth.getUser();
@@ -1956,10 +2001,69 @@ async function ytAnalyze(ch, force){
   }
 }
 
+// ── 채널 분석 결과 필터 ──
+const ytafPerfOn=new Set([0,1,2,3,4]), ytafBoomOn=new Set([0,1,2,3,4]);
+const YTAF_IDS=["ytafViewsMin","ytafViewsMax","ytafLikesMin","ytafForm","ytafDays","ytafText"];
+function ytafVal(id){ const v=parseInt((document.getElementById(id)||{}).value,10); return isNaN(v)?null:v; }
+function ytAnaFiltered(){
+  const form=(document.getElementById("ytafForm")||{}).value||"";
+  const days=ytafVal("ytafDays");
+  const txt=((document.getElementById("ytafText")||{}).value||"").trim().toLowerCase();
+  const vMin=ytafVal("ytafViewsMin"), vMax=ytafVal("ytafViewsMax"), lMin=ytafVal("ytafLikesMin");
+  const since = days ? Date.now()-days*86400000 : null;
+  return ytAnaRows.filter(r=>{
+    const isShort = r.duration>0 && r.duration<=60;
+    if(form==="short" && !isShort) return false;
+    if(form==="long"  && isShort)  return false;
+    if(vMin!=null && (r.views||0) < vMin) return false;
+    if(vMax!=null && (r.views||0) > vMax) return false;
+    if(lMin!=null && (r.likes||0) < lMin) return false;
+    if(since!=null && new Date(r.published||0).getTime() < since) return false;
+    const pi=ytGradeIdx(r.perf,"perf"); if(pi>=0 && !ytafPerfOn.has(pi)) return false;
+    const bi=ytGradeIdx(r.boom,"boom"); if(bi>=0 && !ytafBoomOn.has(bi)) return false;
+    if(txt && !String(r.title||"").toLowerCase().includes(txt)) return false;
+    return true;
+  });
+}
+function ytAnaChips(){
+  const mk=(elId, kind, onSet)=>{
+    const el=document.getElementById(elId); if(!el) return;
+    const cnt=[0,0,0,0,0];
+    ytAnaRows.forEach(r=>{ const i=ytGradeIdx(kind==="perf"?r.perf:r.boom, kind); if(i>=0) cnt[i]++; });
+    el.innerHTML=YT_GRADES.map((g,i)=>
+      `<button class="gchip${onSet.has(i)?"":" off"}" style="${g.css}" data-ag="${elId}:${i}">${g.name}<span class="n">${cnt[i]}</span></button>`).join("");
+    el.querySelectorAll("[data-ag]").forEach(b=>b.onclick=()=>{
+      const i=+b.dataset.ag.split(":")[1];
+      onSet.has(i)?onSet.delete(i):onSet.add(i);
+      ytAnaChips(); ytAnaRerender();
+    });
+  };
+  mk("ytafPerf","perf",ytafPerfOn);
+  mk("ytafBoom","boom",ytafBoomOn);
+}
+function ytafResetAll(){
+  ["ytafViewsMin","ytafViewsMax","ytafLikesMin","ytafText"].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value="";
+  });
+  const f=document.getElementById("ytafForm"); if(f) f.value="";
+  const d=document.getElementById("ytafDays");  if(d) d.value="";
+  [0,1,2,3,4].forEach(i=>{ ytafPerfOn.add(i); ytafBoomOn.add(i); });
+  ytAnaChips(); ytAnaRerender();
+}
+// 필터·정렬만 바뀌었을 때 마지막 채널 화면을 다시 그린다
+let ytAnaLast=null;
+function ytAnaRerender(){ if(ytAnaLast) ytAnaRender(ytAnaLast.ch, ytAnaLast.cached, ytAnaLast.cachedAt); }
+YTAF_IDS.forEach(id=>{
+  const el=document.getElementById(id);
+  if(el) el.addEventListener(el.tagName==="SELECT"?"change":"input", ()=>{ if(ytAnaRows.length) ytAnaRerender(); });
+});
+document.getElementById("ytafReset").onclick=ytafResetAll;
+
 function ytAnaRender(ch, cached, cachedAt){
+  ytAnaLast={ch, cached, cachedAt};
   const body=document.getElementById("ytAnalysisBody");
   const {key,asc}=ytAnaSort, sign=asc?1:-1;
-  const rows=ytAnaRows.slice().sort((a,b)=>{
+  const rows=ytAnaFiltered().sort((a,b)=>{
     let x=a[key], y=b[key];
     if(key==="published"){ x=x?new Date(x).getTime():0; y=y?new Date(y).getTime():0; }
     if(x==null&&y==null) return 0; if(x==null) return 1; if(y==null) return -1;
@@ -2047,10 +2151,17 @@ function ytAnaRender(ch, cached, cachedAt){
     + `</tbody></table></div>
     <div style="font-size:12.5px;color:var(--muted);margin-top:9px">
       위 지표는 이 채널 영상 <b>${ytNum(scope)}개 전체</b>로 계산했고, 표에는
-      <b>조회수 상위 ${ytNum(ytAnaRows.length)}개</b>만 보여줍니다.
+      <b>조회수 상위 ${ytNum(ytAnaRows.length)}개</b> 중
+      ${rows.length===ytAnaRows.length?"전부를":`필터에 걸린 <b>${ytNum(rows.length)}개</b>를`} 보여줍니다.
       떡상배수는 채널 평균 조회수 대비이며,
       <b style="color:#ea580c">HOT</b> 이상인 영상의 주제·제목·썸네일이 이 채널에서 먹힌 방식입니다.
     </div>`;
+  const fb=document.getElementById("ytAnaFilterBox");
+  if(fb){
+    fb.hidden=!ytAnaRows.length;
+    const fc=document.getElementById("ytafCount");
+    if(fc) fc.textContent = ytAnaRows.length ? `${rows.length} / ${ytAnaRows.length}개` : "";
+  }
   const rf=document.getElementById("ytAnaRefresh");
   if(rf) rf.onclick=()=>{
     if(!ytAnaCh) return;
