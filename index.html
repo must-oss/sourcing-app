@@ -82,6 +82,7 @@
   th.sortable.active{color:var(--brand)}
   .kwhead .num,.kw>summary .num{justify-content:flex-end;text-align:right}
   .arrow{font-size:15px;color:#9aa1ac;font-weight:700;line-height:1}
+  .dirtxt{font-size:10.5px;font-weight:600;margin-left:2px;letter-spacing:-.02em}
   .sortable.active .arrow{color:var(--brand)}
   .caret{display:inline-block;color:var(--brand);font-size:12px;margin-right:3px;transition:transform .15s}
   .kw[open] .caret{transform:rotate(90deg)}
@@ -1156,8 +1157,8 @@ const YT_COLS_V=[
   {k:"subs",    t:"구독자",   w:78,  desc:true},
   {k:"views",   t:"조회수",   w:82,  desc:true},
   {k:"likes",   t:"좋아요",   w:70,  desc:true},
-  {k:"perf",    t:"성과도",   w:84,  desc:true, tip:"구독자 수 대비 조회수 등급"},
-  {k:"boom",    t:"떡상배수", w:90,  desc:true, tip:"채널 평균 조회수 대비 조회수 등급"},
+  {k:"perf",    t:"성과도",   w:84,  desc:true, tip:"구독자 수 대비 조회수 등급 · LOW → GOOD → GREAT → HOT → VIRAL (뒤로 갈수록 좋음)"},
+  {k:"boom",    t:"떡상배수", w:90,  desc:true, tip:"채널 평균 조회수 대비 조회수 등급 · LOW → GOOD → GREAT → HOT → VIRAL (뒤로 갈수록 좋음)"},
   {k:"published", t:"게시일", w:78,  desc:true},
 ];
 const YT_COLS_C=[
@@ -1168,7 +1169,7 @@ const YT_COLS_C=[
   {k:"subs",      t:"구독자",   w:84,  desc:true},
   {k:"videoCount",t:"영상수",   w:76,  desc:true},
   {k:"avgViews",  t:"평균조회", w:90,  desc:true, tip:"영상 하나당 평균 조회수"},
-  {k:"perf",      t:"성과도",   w:90,  desc:true, tip:"구독자 수 대비 평균 조회수 등급"},
+  {k:"perf",      t:"성과도",   w:90,  desc:true, tip:"구독자 수 대비 평균 조회수 등급 · LOW → GOOD → GREAT → HOT → VIRAL (뒤로 갈수록 좋음)"},
 ];
 
 const ytNum = n => (n==null||n==="") ? "-" : Number(n).toLocaleString();
@@ -1476,7 +1477,13 @@ function ytRender(){
 
   const th = cols.map(c=>{
     if(c.noSort) return `<th style="${c.w?`width:${c.w}px;`:""}"></th>`;
-    const active=ytSort.key===c.k, arrow=active?(ytSort.asc?"↑":"↓"):"↕";
+    const active=ytSort.key===c.k;
+    // 등급 열은 화살표만으로 방향을 알기 어려워 글자로 함께 보여준다
+    const isGrade=(c.k==="perf"||c.k==="boom");
+    const arrow=active
+      ? (ytSort.asc ? `↑${isGrade?'<span class="dirtxt">낮은순</span>':''}`
+                    : `↓${isGrade?'<span class="dirtxt">높은순</span>':''}`)
+      : "↕";
     const style=(c.w?`width:${c.w}px;`:"");
     const tip=c.tip?`<span class="qmark js-tip" data-tip="${esc(c.tip)}">?</span>`:"";
     return `<th class="sortable${active?" active":""}${c.align?"":" c"}" style="${style}" data-ytsort="${c.k}">${c.t}${tip} <span class="arrow">${arrow}</span></th>`;
@@ -1710,12 +1717,17 @@ function ytAnaRender(ch, cached){
     {k:"title",t:"제목",align:"left"},
     {k:"views",t:"조회수",w:84,desc:true},
     {k:"likes",t:"좋아요",w:72,desc:true},
-    {k:"perf",t:"성과도",w:84,desc:true,tip:"구독자 수 대비 조회수 등급"},
-    {k:"boom",t:"떡상배수",w:90,desc:true,tip:"채널 평균 조회수 대비 조회수 등급"},
+    {k:"perf",t:"성과도",w:84,desc:true,tip:"구독자 수 대비 조회수 등급 · LOW → GOOD → GREAT → HOT → VIRAL (뒤로 갈수록 좋음)"},
+    {k:"boom",t:"떡상배수",w:90,desc:true,tip:"채널 평균 조회수 대비 조회수 등급 · LOW → GOOD → GREAT → HOT → VIRAL (뒤로 갈수록 좋음)"},
     {k:"published",t:"게시일",w:78,desc:true},
   ];
   const th=COLS.map(c=>{
-    const active=ytAnaSort.key===c.k, arrow=active?(ytAnaSort.asc?"↑":"↓"):"↕";
+    const active=ytAnaSort.key===c.k;
+    const isGrade=(c.k==="perf"||c.k==="boom");
+    const arrow=active
+      ? (ytAnaSort.asc ? `↑${isGrade?'<span class="dirtxt">낮은순</span>':''}`
+                       : `↓${isGrade?'<span class="dirtxt">높은순</span>':''}`)
+      : "↕";
     const tip=c.tip?`<span class="qmark js-tip" data-tip="${esc(c.tip)}">?</span>`:"";
     return `<th class="sortable${active?" active":""}${c.align?"":" c"}" style="${c.w?`width:${c.w}px;`:""}" data-anasort="${c.k}">${c.t}${tip} <span class="arrow">${arrow}</span></th>`;
   }).join("");
