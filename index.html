@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>소싱 웹앱</title>
+<title>SellerDeck · 셀러덱</title>
 <style>
   :root{
     --bg:#f7f8fa; --card:#fff; --ink:#16191f; --muted:#70757e; --line:#e8eaee;
-    --brand:#3550cf; --brand2:#2b42ad; --accent:#0d9f6e; --warn:#c2410c; --band:#f3f5fb;
-    --soft:#f4f6f9; --ring:rgba(53,80,207,.12);
+    --brand:#0d8c61; --brand2:#0a6f4d; --accent:#0d8c61; --warn:#c2410c; --band:#eff7f3;
+    --soft:#f4f6f8; --ring:rgba(13,140,97,.14);
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);
@@ -33,8 +33,12 @@
   /* 탭 */
   nav.tabs{display:flex;gap:2px;background:var(--card);border-bottom:1px solid var(--line);padding:0 20px;
     position:sticky;top:46px;z-index:9;overflow-x:auto}
-  nav.tabs button{background:none;border:0;border-bottom:2px solid transparent;padding:13px 15px;
-    cursor:pointer;font-size:13.5px;color:var(--muted);white-space:nowrap;font-weight:500;transition:.12s}
+  nav.tabs button{background:none;border:0;border-bottom:2px solid transparent;padding:13px 14px;
+    cursor:pointer;font-size:13.5px;color:var(--muted);white-space:nowrap;font-weight:500;transition:.12s;
+    display:inline-flex;align-items:center;gap:7px}
+  nav.tabs svg{width:15px;height:15px;flex:0 0 15px;stroke:currentColor;fill:none;
+    stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;opacity:.85}
+  nav.tabs button.active svg{opacity:1}
   nav.tabs button:hover{color:var(--ink)}
   nav.tabs button.active{color:var(--brand);border-bottom-color:var(--brand);font-weight:700}
   nav.tabs button:disabled{color:#c0c4cc;cursor:not-allowed}
@@ -68,7 +72,7 @@
   td a{color:var(--ink);text-decoration:none}
   td a:hover{color:var(--brand);text-decoration:none}
   tr.dateband td{background:var(--band)}
-  .chan{display:inline-block;background:#eef2ff;color:#3730a3;border-radius:5px;padding:1px 7px;font-size:12px}
+  .chan{display:inline-block;background:#eef5f1;color:#0a6f4d;border-radius:5px;padding:1px 7px;font-size:12px}
   .tcom{color:#9333ea}
   /* 키워드 표 */
   .kwhead,.kw>summary{display:grid;grid-template-columns:82px 1fr 108px 96px;align-items:center;gap:10px}
@@ -86,10 +90,10 @@
   .sortable.active .arrow{color:var(--brand)}
   .caret{display:inline-block;color:var(--brand);font-size:12px;margin-right:3px;transition:transform .15s}
   .kw[open] .caret{transform:rotate(90deg)}
-  .hint{color:#1e40af;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;
+  .hint{color:#0a6f4d;background:#f0f8f4;border:1px solid #c9e5d8;border-radius:8px;
     padding:8px 12px;font-size:13px;margin:0 0 12px}
   .qmark{position:relative;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;
-    border-radius:50%;background:#dbeafe;color:#1e40af;font-size:11px;font-weight:800;
+    border-radius:50%;background:#d9ede3;color:#0a6f4d;font-size:11px;font-weight:800;
     cursor:help;margin-left:4px;vertical-align:middle;user-select:none}
   .qmark:hover{background:var(--brand);color:#fff}
   .qmark:hover::after{content:attr(data-tip);position:absolute;left:50%;top:150%;transform:translateX(-50%);
@@ -156,8 +160,8 @@
 
 <!-- 로그인/가입 화면 -->
 <section id="auth" class="hidden">
-  <h1>소싱 웹앱</h1>
-  <p class="sub">홈쇼핑 키워드 · 도매몰 소싱 도구</p>
+  <h1 style="letter-spacing:-.03em">Seller<span style="color:var(--brand)">Deck</span></h1>
+  <p class="sub">홈쇼핑 · 도매몰 · 쿠팡 · 유튜브 리서치 도구</p>
   <div id="loginForm">
     <label>이메일</label>
     <input id="email" type="email" autocomplete="email" placeholder="you@example.com">
@@ -213,27 +217,27 @@
   <div id="authMsg" class="msg hidden"></div>
   <div class="switch" style="margin-top:16px;line-height:1.9">
     도매몰 소싱을 쓰려면 크롬 확장이 필요합니다<br>
-    <a href="install.html" target="_blank" style="white-space:nowrap"><b>🧩 설치 안내</b></a>
+    <a href="install.html" target="_blank" style="white-space:nowrap"><b><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><path d="M14 3a2 2 0 1 0-4 0v1H6a2 2 0 0 0-2 2v4H3a2 2 0 1 0 0 4h1v4a2 2 0 0 0 2 2h4v-1a2 2 0 1 1 4 0v1h4a2 2 0 0 0 2-2v-4h1a2 2 0 1 0 0-4h-1V6a2 2 0 0 0-2-2h-4V3Z"/></svg>설치 안내</b></a>
   </div>
 </section>
 
 <!-- 앱 본체 -->
 <div id="app" class="hidden">
   <header>
-    <span class="logo">🛒 소싱 웹앱</span>
+    <span class="logo">Seller<span style="color:var(--brand)">Deck</span></span>
     <span class="spacer"></span>
-    <a href="install.html" target="_blank" style="background:#eef2ff;color:#3730a3;border:1px solid #c7d2fe;border-radius:8px;padding:7px 13px;font-size:13px;font-weight:700;text-decoration:none;margin-right:10px;white-space:nowrap">🧩 크롬 확장 설치 안내</a>
+    <a href="install.html" target="_blank" style="background:#f0f8f4;color:var(--brand2);border:1px solid #c9e5d8;border-radius:8px;padding:7px 13px;font-size:13px;font-weight:700;text-decoration:none;margin-right:10px;white-space:nowrap"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><path d="M14 3a2 2 0 1 0-4 0v1H6a2 2 0 0 0-2 2v4H3a2 2 0 1 0 0 4h1v4a2 2 0 0 0 2 2h4v-1a2 2 0 1 1 4 0v1h4a2 2 0 0 0 2-2v-4h1a2 2 0 1 0 0-4h-1V6a2 2 0 0 0-2-2h-4V3Z"/></svg>크롬 확장 설치 안내</a>
     <span class="who" id="who"></span>
     <button id="btnLogout">로그아웃</button>
   </header>
   <nav class="tabs">
-    <button class="active" data-tab="hsmoa">홈쇼핑 키워드</button>
-    <button data-tab="sourcing">도매몰 소싱</button>
-    <button data-tab="image" id="tabImage" hidden>이미지 생성</button>
-    <button data-tab="youtube">📺 유튜브 리서치</button>
-    <button data-tab="guide">📖 사용 가이드</button>
-    <button data-tab="coupang" id="tabCoupang" hidden style="margin-left:auto">📊 쿠팡 분석</button>
-    <button data-tab="admin" id="tabAdmin" hidden>👤 관리자</button>
+    <button class="active" data-tab="hsmoa"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg>홈쇼핑 키워드</button>
+    <button data-tab="sourcing"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8v8l-9 5-9-5V8l9-5 9 5Z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>도매몰 소싱</button>
+    <button data-tab="image" id="tabImage" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>이미지 생성</button>
+    <button data-tab="youtube"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="4"/><path d="m10 9 5 3-5 3V9Z"/></svg>유튜브 리서치</button>
+    <button data-tab="guide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>사용 가이드</button>
+    <button data-tab="coupang" id="tabCoupang" hidden style="margin-left:auto"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M6 21v-7M11 21V8M16 21v-4M21 21V12"/></svg>쿠팡 분석</button>
+    <button data-tab="admin" id="tabAdmin" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20.5c.6-3.8 3.8-5.5 7.5-5.5s6.9 1.7 7.5 5.5"/></svg>관리자</button>
   </nav>
   <main>
     <!-- 탭1: 홈쇼핑 키워드 -->
@@ -386,24 +390,41 @@
           font-size:13.5px;line-height:1.45;color:var(--ink)}
         a.vt:hover{color:var(--brand)}
         /* 카드 보기 */
-        .ycards{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:14px}
-        .ycard{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;
+        .ycards{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:16px}
+        .ycard{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;
           display:flex;flex-direction:column;transition:.14s}
-        .ycard:hover{border-color:#cdd3de;box-shadow:0 6px 18px rgba(20,25,40,.07);transform:translateY(-1px)}
-        .ycard .ythumb{width:100%;aspect-ratio:16/9;border-radius:0}
-        .ycard .body{padding:10px 12px 12px;display:flex;flex-direction:column;gap:7px;flex:1}
-        .ycard .ttl{font-size:13px;line-height:1.45;font-weight:600;color:var(--ink);
-          display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-        .ycard .sub{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
-        .ycard .ch{display:flex;align-items:center;gap:6px;font-size:12px;color:#4a5160;
-          border-top:1px solid var(--line);padding-top:8px;margin-top:auto}
-        .ycard .ch img{width:22px;height:22px;border-radius:50%;flex:0 0 22px}
-        .ycard .g{display:flex;gap:6px;border-top:1px solid var(--line);padding-top:8px}
-        .ycard .g > div{flex:1;text-align:center}
-        .ycard .g .lb{font-size:10.5px;color:var(--muted);margin-bottom:2px}
-        .ycard .star{position:absolute;left:6px;top:6px;z-index:2;border:0;background:rgba(0,0,0,.45);
-          color:#fff;border-radius:7px;width:26px;height:26px;cursor:pointer;font-size:14px;line-height:1}
+        .ycard:hover{border-color:#c6d5cd;box-shadow:0 8px 22px rgba(20,35,28,.09);transform:translateY(-2px)}
+        .ycard .ythumb{width:100%;aspect-ratio:16/9;border-radius:0;background:#eef0f3}
         .ycard .top{position:relative}
+        .ycard .star{position:absolute;left:8px;top:8px;z-index:2;border:0;background:rgba(0,0,0,.5);
+          color:#fff;border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:15px;line-height:1;
+          backdrop-filter:blur(3px);transition:.12s}
+        .ycard .star:hover{background:rgba(0,0,0,.72)}
+        .ycard .body{padding:12px 13px 0;display:flex;flex-direction:column;gap:6px;flex:1}
+        /* 제목 — 카드의 주인공이라 표보다 크고 진하게 */
+        .ycard .ttl{font-size:14px;line-height:1.42;font-weight:700;color:var(--ink);letter-spacing:-.015em;
+          display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:40px}
+        .ycard .ttl:hover{color:var(--brand)}
+        .ycard .sub{font-size:12px;color:#7b818b;font-variant-numeric:tabular-nums}
+        .ycard .sub i{font-style:normal;color:#d3d7dd;margin:0 5px}
+        /* 채널 줄 — 로고 + 이름 + 규모 */
+        .ycard .ch{display:flex;align-items:center;gap:9px;margin-top:auto;
+          border-top:1px solid var(--line);padding:10px 0 0}
+        .ycard .av{width:34px;height:34px;border-radius:50%;flex:0 0 34px;object-fit:cover;
+          background:var(--soft);display:flex;align-items:center;justify-content:center;
+          font-size:14px;font-weight:700;color:#9aa1ac;overflow:hidden}
+        .ycard .av img{width:100%;height:100%;object-fit:cover;display:block}
+        .ycard .cn{font-size:12.5px;font-weight:600;color:#2b3038;line-height:1.3;
+          display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;word-break:break-all}
+        .ycard .cs{font-size:11.5px;color:#8a9099;font-variant-numeric:tabular-nums;margin-top:1px}
+        /* 지표 스트립 */
+        .ycard .g{display:flex;border-top:1px solid var(--line);margin-top:10px;background:#fcfdfc}
+        .ycard .g > div{flex:1;text-align:center;padding:9px 4px 10px}
+        .ycard .g > div + div{border-left:1px solid var(--line)}
+        .ycard .g .lb{font-size:11px;color:#8a9099;margin-bottom:3px}
+        .ycard .g .dots{font-size:9px;letter-spacing:1.5px;line-height:1;margin-bottom:3px;color:#dfe3e8}
+        .ycard .g .gv{font-size:13px;letter-spacing:.2px}
+        .ycard .g .gv > span{display:inline-block;padding:1px 8px}
         /* 등록 채널 칩 — 수십 개여도 한눈에 */
         #tab-youtube .chchip{display:inline-flex;align-items:center;background:#fff;border:1px solid var(--line);
           border-radius:999px;padding:5px 10px 5px 8px;font-size:12.5px;cursor:pointer;margin:0 6px 6px 0;
@@ -428,14 +449,14 @@
       <div class="ytnav" id="ytNav">
         <button data-yt="video" class="active">영상 찾기</button>
         <button data-yt="channel">채널 찾기</button>
-        <button data-yt="saved">⭐ 수집함</button>
+        <button data-yt="saved"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3Z"/></svg>수집함</button>
         <button data-yt="analysis">채널 분석</button>
       </div>
 
       <!-- ── 검색 (영상/채널 공용) ── -->
       <div id="ytPaneSearch">
         <div class="hint" id="ytHint">구독자 대비 조회수가 터진 영상을 찾습니다.
-          <a href="#" data-goguide="1" style="cursor:pointer"><b>📖 보는 법</b></a></div>
+          <a href="#" data-goguide="1" style="cursor:pointer"><b><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>보는 법</b></a></div>
 
         <div class="toolbar">
           <input type="search" id="ytQ" placeholder="검색어 (예: 콜라겐, 갱년기 영양제)" style="min-width:260px;flex:1"><span class="qmark js-tip" data-tip="한 번에 50개를 받아옵니다. 유튜브가 한 번 요청에 주는 최대치이고, 더 받으려면 요청을 한 번 더 써야 해서 횟수가 이중으로 차감됩니다. 어떤 50개인지는 옆의 수집 기준이 정합니다.">?</span>
@@ -453,7 +474,7 @@
           </select>
           <button id="ytRun" style="border:0;background:var(--brand);color:#fff;border-radius:9px;padding:9px 20px;cursor:pointer;font-weight:600">검색</button>
           <button id="ytPreset" style="border:1px solid #f5c8a0;background:#fff7ed;color:#c2410c;
-            border-radius:9px;padding:9px 14px;cursor:pointer;font-weight:700;font-size:13px">🔥 숨은 성공작</button>
+            border-radius:9px;padding:9px 14px;cursor:pointer;font-weight:700;font-size:13px"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><path d="M12 3v4M12 17v4M4.9 7.5l2.9 2.9M16.2 13.6l2.9 2.9M3 12h4M17 12h4M4.9 16.5l2.9-2.9M16.2 10.4l2.9-2.9"/></svg>숨은 성공작</button>
           <span class="qmark js-tip" data-tip="조회수 상위 50개를 가져온 뒤 구독자가 적은 채널만 남깁니다. 성과도가 높은 영상, 즉 작은 채널인데 터진 영상이 걸러집니다. 검색 1회가 차감됩니다.">?</span>
           <div class="seg" id="ytView" style="margin-left:6px">
             <button data-view="table" class="active" title="표로 보기">▤</button>
@@ -498,7 +519,7 @@
           </div>
         </details>
 
-        <div id="ytResults" class="placeholder">검색어를 입력하고 <b>검색</b>을 누르세요.</div>
+        <div id="ytResults"><div class="placeholder">검색어를 입력하고 <b>검색</b>을 누르세요.</div></div>
       </div>
 
       <!-- ── 수집함 ── -->
@@ -548,7 +569,7 @@
         #tab-guide th{background:var(--card);font-weight:700;white-space:nowrap}
         #tab-guide .box{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--brand);
           border-radius:9px;padding:12px 14px;margin:10px 0;font-size:13px;line-height:1.8}
-        #tab-guide code{background:#eef2ff;color:#3730a3;border-radius:5px;padding:1px 6px;font-size:12.5px}
+        #tab-guide code{background:#eef5f1;color:#0a6f4d;border-radius:5px;padding:1px 6px;font-size:12.5px}
       </style>
 
       <div class="meta">궁금한 항목을 눌러서 펼쳐 보세요. 순서는 위 탭 순서와 같습니다.</div>
@@ -654,7 +675,7 @@
             <tr><th style="width:74px">등급</th><th>뜻</th><th style="width:88px">성과도</th><th style="width:88px">떡상배수</th></tr>
             <tr><td style="color:#9aa1ac;font-weight:700">LOW</td><td>구독자에게도 잘 안 닿음</td><td>0.5 미만</td><td>1 미만</td></tr>
             <tr><td style="color:#374151;font-weight:700">GOOD</td><td>구독자 대부분이 시청 · 평소 수준</td><td>0.5 ~ 1</td><td>1 ~ 1.5</td></tr>
-            <tr><td style="color:#2563eb;font-weight:700">GREAT</td><td>외부 유입 시작 · 잘된 편</td><td>1 ~ 3</td><td>1.5 ~ 3</td></tr>
+            <tr><td style="color:#0d8c61;font-weight:700">GREAT</td><td>외부 유입 시작 · 잘된 편</td><td>1 ~ 3</td><td>1.5 ~ 3</td></tr>
             <tr><td style="color:#ea580c;font-weight:800">HOT</td><td>알고리즘이 밀어주는 중 · 히트작</td><td>3 ~ 10</td><td>3 ~ 10</td></tr>
             <tr><td style="color:#dc2626;font-weight:800;background:#fee2e2">VIRAL</td><td>대박 · 이례적으로 터짐</td><td>10 이상</td><td>10 이상</td></tr>
           </table>
@@ -1122,7 +1143,7 @@ function handleSrcResult(d){
       +`<td>${p.thumb?`<img src="${esc(p.thumb)}" style="width:44px;height:44px;object-fit:cover;border-radius:4px">`:""}</td>`
       +`<td>${p.link?`<a href="${esc(p.link)}" target="_blank">${esc(p.name)}</a>`:esc(p.name)}</td>`
       +`<td style="text-align:right;font-variant-numeric:tabular-nums">${p.price!=null?Number(p.price).toLocaleString()+"원":"-"}</td>`
-      +`<td class="c">${p.link?`<button class="dlBtn" data-link="${esc(p.link)}" data-name="${esc(p.name)}" title="이미지 다운로드" style="border:0;background:#eef2ff;color:#3730a3;border-radius:6px;padding:4px 10px;cursor:pointer">📥</button>`:""}</td>`
+      +`<td class="c">${p.link?`<button class="dlBtn" data-link="${esc(p.link)}" data-name="${esc(p.name)}" title="이미지 다운로드" style="border:0;background:#eef5f1;color:#0a6f4d;border-radius:6px;padding:4px 10px;cursor:pointer">📥</button>`:""}</td>`
       +`</tr>`).join("");
     return `<div style="margin:14px 0">
       <div style="font-weight:700;margin-bottom:6px">${esc(r.name)}
@@ -1207,12 +1228,25 @@ const YT_COLS_C=[
 ];
 
 const ytNum = n => (n==null||n==="") ? "-" : Number(n).toLocaleString();
+// 카드에서는 '113.2만'처럼 짧게 — 숫자가 길면 제목을 잡아먹는다
+function ytNumK(n){
+  n = Number(n||0);
+  if(n >= 1e8)  return (n/1e8).toFixed(1).replace(/\.0$/,"")+"억";
+  if(n >= 1e4)  return (n/1e4).toFixed(1).replace(/\.0$/,"")+"만";
+  return n.toLocaleString();
+}
+// 채널 로고 — 아직 못 받아온 채널은 이름 첫 글자로 대체
+function ytAvatar(r){
+  const u = r.chThumb || r.channelThumb || "";
+  if(u) return `<span class="av"><img src="${esc(u)}" alt="" loading="lazy"></span>`;
+  return `<span class="av">${esc((r.channel||"?").trim().charAt(0))}</span>`;
+}
 // 썸네일 + 우하단 재생시간 배지 (제목 옆에 따로 표기하지 않는다)
 function ytThumb(r, w, h){
   const d=r.duration||0;
   const mmss = d ? (d>=3600 ? `${Math.floor(d/3600)}:${String(Math.floor(d%3600/60)).padStart(2,"0")}:${String(d%60).padStart(2,"0")}`
                             : `${Math.floor(d/60)}:${String(d%60).padStart(2,"0")}`) : "";
-  return `<a class="ythumb" style="width:${w}px;height:${h}px" href="https://www.youtube.com/watch?v=${esc(r.videoId)}" target="_blank">`
+  return `<a class="ythumb"${w?` style="width:${w}px;height:${h}px"`:""} href="https://www.youtube.com/watch?v=${esc(r.videoId)}" target="_blank">`
     +`<img src="${esc(r.thumb||"")}" alt="">`
     + (mmss?`<span class="dur">${mmss}</span>`:"")
     +`</a>`;
@@ -1229,7 +1263,7 @@ function ytRel(s){
 const YT_GRADES=[
   {name:"LOW",   css:"color:#9aa1ac"},
   {name:"GOOD",  css:"color:#374151"},
-  {name:"GREAT", css:"color:#2563eb;font-weight:600"},
+  {name:"GREAT", css:"color:#0d8c61;font-weight:600"},
   {name:"HOT",   css:"color:#ea580c;font-weight:700"},
   {name:"VIRAL", css:"color:#dc2626;font-weight:800;background:#fee2e2;border-radius:4px"},
 ];
@@ -1284,7 +1318,7 @@ function ytShowPane(name){
     const isVideo=(name==="video");
     ytMode=isVideo?"video_search":"channel_search";
     document.getElementById("ytHint").innerHTML = isVideo
-      ? `구독자 대비 조회수가 터진 영상을 찾습니다. <a href="#" data-goguide="1" style="cursor:pointer"><b>📖 보는 법</b></a>`
+      ? `구독자 대비 조회수가 터진 영상을 찾습니다. <a href="#" data-goguide="1" style="cursor:pointer"><b><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>보는 법</b></a>`
       : `키워드와 관련된 채널을 찾습니다. 구독자 대비 평균 조회수가 좋은 채널이 벤치마킹 대상입니다.`;
     document.getElementById("ytQ").placeholder = isVideo
       ? "검색어 (예: 콜라겐, 갱년기 영양제)" : "채널 관련 키워드 (예: 건강정보, 약사)";
@@ -1454,6 +1488,14 @@ async function ytToggleSave(r){
 function ytRenderCards(rows){
   const box=document.getElementById("ytResults");
   const g=(v,k)=>{ const x=ytGrade(v,k); return x?`<span style="${x.css};font-size:12px;font-weight:700">${x.name}</span>`:'<span style="color:#c8ccd2">-</span>'; };
+  // 점 개수로 등급 높낮이를 먼저 읽히게 한다 (LOW 1개 → VIRAL 5개)
+  const gd=(v,k)=>{
+    const i=ytGradeIdx(v,k), x=ytGrade(v,k);
+    if(!x) return `<div class="dots">${"·".repeat(5)}</div><div class="gv" style="color:#c8ccd2">-</div>`;
+    const col=(x.css.match(/color:(#[0-9a-f]{3,6})/i)||[,"#374151"])[1];
+    return `<div class="dots"><span style="color:${col}">${"●".repeat(i+1)}</span>${"●".repeat(4-i)}</div>`
+         + `<div class="gv"><span style="${x.css}">${x.name}</span></div>`;
+  };
   if(ytMode!=="video_search"){
     box.innerHTML=`<div class="ycards">`+rows.map((r,i)=>`
       <div class="ycard"><div class="body">
@@ -1474,17 +1516,23 @@ function ytRenderCards(rows){
     box.innerHTML=`<div class="ycards">`+rows.map((r,i)=>`
       <div class="ycard">
         <div class="top">
-          <button class="ytstar star" data-i="${i}">${ytSavedIds.has(r.videoId)?"⭐":"☆"}</button>
+          <button class="ytstar star" data-i="${i}" title="수집">${ytSavedIds.has(r.videoId)?"⭐":"☆"}</button>
           ${ytThumb(r,0,0)}
         </div>
         <div class="body">
           <a class="ttl" href="https://www.youtube.com/watch?v=${esc(r.videoId)}" target="_blank">${esc(r.title)}</a>
-          <div class="sub">조회수 ${ytNum(r.views)} · 좋아요 ${ytNum(r.likes)} · ${ytAgo(r.published)}</div>
-          <div class="ch">${esc(r.channel||"")}<span style="margin-left:auto;color:var(--muted)">구독자 ${ytNum(r.subs)}</span></div>
-          <div class="g">
-            <div><div class="lb">성과도</div>${g(r.perf,"perf")}</div>
-            <div><div class="lb">떡상배수</div>${g(r.boom,"boom")}</div>
+          <div class="sub">조회수 ${ytNumK(r.views)}<i>|</i>게시일 ${ytAgo(r.published)}</div>
+          <div class="ch">
+            ${ytAvatar(r)}
+            <div style="min-width:0">
+              <div class="cn">${esc(r.channel||"")}</div>
+              <div class="cs">구독자 ${ytNumK(r.subs)}명${r.chVideos?` · 영상 ${ytNumK(r.chVideos)}개`:""}</div>
+            </div>
           </div>
+        </div>
+        <div class="g">
+          <div><div class="lb">성과도</div>${gd(r.perf,"perf")}</div>
+          <div><div class="lb">떡상배수</div>${gd(r.boom,"boom")}</div>
         </div>
       </div>`).join("")+`</div>`;
   }
@@ -1505,6 +1553,7 @@ function ytRender(){
   const rows = ytSortRows(ytFiltered());
   const cnt=document.getElementById("ytfCount");
   if(cnt) cnt.textContent = ytRows.length ? `${rows.length} / ${ytRows.length}개` : "";
+  box.className="";
   if(!ytRows.length){ box.innerHTML='<div class="placeholder">검색어를 입력하고 <b>검색</b>을 누르세요.</div>'; return; }
   if(!rows.length){ box.innerHTML='<div class="placeholder">필터에 맞는 결과가 없습니다. <b>필터 전체 해제</b>를 눌러보세요.</div>'; return; }
   if(ytView==="card"){ ytRenderCards(rows); return; }
@@ -2434,7 +2483,7 @@ function addResultCard(box, mod, b64, err, prompt, refined){
     d.innerHTML=`<div style="font-weight:700;margin-bottom:6px">${mod.out}. ${esc(mod.name)}
         <span style="font-weight:400;font-size:11px;color:var(--muted)">${refined?"· 프롬프트 보강됨":""}</span></div>
       <img src="${src}" style="width:100%;border-radius:6px">
-      <a href="${src}" download="${mod.out}.png" style="display:inline-block;margin-top:8px;background:#eef2ff;color:#3730a3;border-radius:6px;padding:5px 12px;font-size:13px;text-decoration:none">⬇ ${mod.out}.png 저장</a>
+      <a href="${src}" download="${mod.out}.png" style="display:inline-block;margin-top:8px;background:#eef5f1;color:#0a6f4d;border-radius:6px;padding:5px 12px;font-size:13px;text-decoration:none">⬇ ${mod.out}.png 저장</a>
       ${prompt?`<details style="margin-top:8px"><summary style="cursor:pointer;font-size:12px;color:var(--brand2)">사용된 프롬프트 보기</summary>
         <div style="font-size:11.5px;line-height:1.6;white-space:pre-wrap;max-height:220px;overflow:auto;background:#fafafa;border:1px solid var(--line);border-radius:6px;padding:8px;margin-top:6px">${esc(prompt)}</div></details>`:""}`;
   }
