@@ -438,21 +438,20 @@
 
       <!-- ── 수집함 ── -->
       <div id="ytPaneSaved" hidden>
-        <div class="hint">검색 결과에서 <b>⭐</b>를 누른 영상·채널이 모입니다. 다시 누르면 해제됩니다.</div>
-        <div class="toolbar">
-          <div class="seg">
-            <button id="ytSavedV" class="active" style="background:var(--brand);color:#fff;border:0;padding:8px 16px;cursor:pointer">영상</button>
-            <button id="ytSavedC" style="background:#fff;border:0;padding:8px 16px;cursor:pointer;color:var(--muted)">채널</button>
-          </div>
-          <span class="count" id="ytSavedCount"></span>
-        </div>
+        <div class="hint"><b>영상 찾기</b>에서 <b>⭐</b>를 누른 영상이 모입니다. 다시 누르면 해제됩니다.
+          <span style="color:var(--muted)">(수집한 <b>채널</b>은 <b>채널 분석</b> 탭에 있습니다)</span></div>
+        <div class="toolbar"><span class="count" id="ytSavedCount"></span></div>
         <div id="ytSavedList" class="placeholder">불러오는 중…</div>
       </div>
 
       <!-- ── 채널 분석 ── -->
       <div id="ytPaneAnalysis" hidden>
-        <div class="hint">수집한 채널의 영상을 모아 <b>어떤 주제가 잘 먹혔는지</b> 봅니다.</div>
-        <div id="ytAnalysisBody" class="placeholder">준비 중입니다. 먼저 <b>채널 찾기</b>에서 채널을 ⭐ 수집해 주세요.</div>
+        <div class="hint"><b>채널 찾기</b>에서 <b>⭐</b>로 담은 채널이 모입니다. 채널을 누르면
+          <b>최근 영상 50개</b>를 가져와 어떤 주제가 먹혔는지 보여줍니다.
+          <span style="color:var(--accent)">채널 조회는 검색 횟수를 쓰지 않습니다</span></div>
+        <div class="toolbar"><span class="count" id="ytChCount"></span></div>
+        <div id="ytChList" class="placeholder">불러오는 중…</div>
+        <div id="ytAnalysisBody" style="margin-top:16px"></div>
       </div>
     </section>
 
@@ -1428,83 +1427,173 @@ document.getElementById("ytQ").addEventListener("keydown",e=>{ if(e.key==="Enter
 document.getElementById("ytfReset").onclick=ytfResetAll;
 document.querySelectorAll("#ytNav button").forEach(b=>b.onclick=()=>ytShowPane(b.dataset.yt));
 
-// ── 수집함 ──
-let ytSavedMode="video";
+// ── 수집함 (영상 전용) ──
 async function ytLoadSaved(){
   const list=document.getElementById("ytSavedList"), cnt=document.getElementById("ytSavedCount");
   list.innerHTML='<div class="placeholder">불러오는 중…</div>';
   if(!sb){ list.innerHTML='<div class="placeholder">로그인이 필요합니다.</div>'; return; }
   try{
-    if(ytSavedMode==="video"){
-      const {data,error}=await sb.from("yt_saved").select("*").order("created_at",{ascending:false});
-      if(error) throw error;
-      const rows=data||[]; cnt.textContent=`영상 ${rows.length}개`;
-      list.innerHTML = rows.length ? `<div class="tablewrap"><table><thead><tr>
-          <th style="width:36px"></th><th style="width:74px"></th><th>제목</th>
-          <th style="width:120px">채널</th><th style="width:80px" class="c">구독자</th>
-          <th style="width:84px" class="c">조회수</th><th style="width:84px" class="c">성과도</th>
-          <th style="width:78px" class="c">게시일</th></tr></thead><tbody>`
-        + rows.map(r=>{
-            const perf = r.subs ? +(r.views/r.subs).toFixed(2) : null;
-            return `<tr><td class="c"><button class="unsave" data-id="${esc(r.video_id)}" style="border:0;background:none;cursor:pointer;font-size:16px">⭐</button></td>`
-            +`<td><a href="https://www.youtube.com/watch?v=${esc(r.video_id)}" target="_blank"><img src="${esc(r.thumb||"")}" style="width:64px;height:36px;object-fit:cover;border-radius:4px"></a></td>`
-            +`<td><a href="https://www.youtube.com/watch?v=${esc(r.video_id)}" target="_blank">${esc(r.title||"")}</a></td>`
-            +`<td style="font-size:12.5px">${esc(r.channel||"")}</td>`
-            +`<td class="c">${ytNum(r.subs)}</td><td class="c">${ytNum(r.views)}</td>`
-            + ytGradeCell(perf,"perf")
-            +`<td class="c" style="color:var(--muted)">${ytAgo(r.published)}</td></tr>`;
-          }).join("") + `</tbody></table></div>`
-        : '<div class="placeholder">아직 수집한 영상이 없습니다. 검색 결과에서 <b>⭐</b>를 눌러 담아보세요.</div>';
-      list.querySelectorAll(".unsave").forEach(b=>b.onclick=async()=>{
-        const { data:{ user } }=await sb.auth.getUser();
-        await sb.from("yt_saved").delete().eq("member_id",user.id).eq("video_id",b.dataset.id);
-        ytSavedIds.delete(b.dataset.id); ytLoadSaved();
-      });
-    }else{
-      const {data,error}=await sb.from("yt_channels").select("*").order("created_at",{ascending:false});
-      if(error) throw error;
-      const rows=data||[]; cnt.textContent=`채널 ${rows.length}개`;
-      list.innerHTML = rows.length ? `<div class="tablewrap"><table><thead><tr>
-          <th style="width:36px"></th><th style="width:56px"></th><th>채널</th>
-          <th style="width:84px" class="c">구독자</th><th style="width:76px" class="c">영상수</th>
-          <th style="width:90px" class="c">평균조회</th><th style="width:90px" class="c">성과도</th></tr></thead><tbody>`
-        + rows.map(r=>{
-            const perf = r.subs ? +((r.avg_views||0)/r.subs).toFixed(2) : null;
-            return `<tr><td class="c"><button class="unsavec" data-id="${esc(r.channel_id)}" style="border:0;background:none;cursor:pointer;font-size:16px">⭐</button></td>`
-            +`<td>${r.thumb?`<img src="${esc(r.thumb)}" style="width:40px;height:40px;border-radius:50%">`:""}</td>`
-            +`<td><a href="https://www.youtube.com/channel/${esc(r.channel_id)}" target="_blank"><b>${esc(r.title||"")}</b></a></td>`
-            +`<td class="c">${ytNum(r.subs)}</td><td class="c">${ytNum(r.video_count)}</td>`
-            +`<td class="c">${ytNum(r.avg_views)}</td>`
-            + ytGradeCell(perf,"perf") + `</tr>`;
-          }).join("") + `</tbody></table></div>`
-        : '<div class="placeholder">아직 수집한 채널이 없습니다. <b>채널 찾기</b>에서 ⭐를 눌러 담아보세요.</div>';
-      list.querySelectorAll(".unsavec").forEach(b=>b.onclick=async()=>{
-        const { data:{ user } }=await sb.auth.getUser();
-        await sb.from("yt_channels").delete().eq("member_id",user.id).eq("channel_id",b.dataset.id);
-        ytSavedChIds.delete(b.dataset.id); ytLoadSaved();
-      });
+    const {data,error}=await sb.from("yt_saved").select("*").order("created_at",{ascending:false});
+    if(error) throw error;
+    const rows=data||[]; cnt.textContent=`수집한 영상 ${rows.length}개`;
+    if(!rows.length){
+      list.innerHTML='<div class="placeholder">아직 수집한 영상이 없습니다. <b>영상 찾기</b> 결과에서 <b>⭐</b>를 눌러 담아보세요.</div>';
+      return;
     }
+    list.innerHTML=`<div class="tablewrap"><table><thead><tr>
+        <th style="width:36px"></th><th style="width:74px"></th><th>제목</th>
+        <th style="width:120px">채널</th><th style="width:80px" class="c">구독자</th>
+        <th style="width:84px" class="c">조회수</th><th style="width:84px" class="c">성과도</th>
+        <th style="width:78px" class="c">게시일</th></tr></thead><tbody>`
+      + rows.map(r=>{
+          const perf = r.subs ? +(r.views/r.subs).toFixed(2) : null;
+          return `<tr><td class="c"><button class="unsave" data-id="${esc(r.video_id)}" title="수집 해제" style="border:0;background:none;cursor:pointer;font-size:16px">⭐</button></td>`
+          +`<td><a href="https://www.youtube.com/watch?v=${esc(r.video_id)}" target="_blank"><img src="${esc(r.thumb||"")}" style="width:64px;height:36px;object-fit:cover;border-radius:4px"></a></td>`
+          +`<td><a href="https://www.youtube.com/watch?v=${esc(r.video_id)}" target="_blank">${esc(r.title||"")}</a></td>`
+          +`<td style="font-size:12.5px">${esc(r.channel||"")}</td>`
+          +`<td class="c">${ytNum(r.subs)}</td><td class="c">${ytNum(r.views)}</td>`
+          + ytGradeCell(perf,"perf")
+          +`<td class="c" style="color:var(--muted)">${ytAgo(r.published)}</td></tr>`;
+        }).join("") + `</tbody></table></div>`;
+    list.querySelectorAll(".unsave").forEach(b=>b.onclick=async()=>{
+      const { data:{ user } }=await sb.auth.getUser();
+      await sb.from("yt_saved").delete().eq("member_id",user.id).eq("video_id",b.dataset.id);
+      ytSavedIds.delete(b.dataset.id); ytLoadSaved();
+    });
   }catch(e){
     list.innerHTML=`<div class="placeholder" style="color:var(--warn)">${esc(e.message||String(e))}</div>`;
   }
 }
-document.getElementById("ytSavedV").onclick=()=>{
-  ytSavedMode="video";
-  document.getElementById("ytSavedV").style.cssText="background:var(--brand);color:#fff;border:0;padding:8px 16px;cursor:pointer";
-  document.getElementById("ytSavedC").style.cssText="background:#fff;border:0;padding:8px 16px;cursor:pointer;color:var(--muted)";
-  ytLoadSaved();
-};
-document.getElementById("ytSavedC").onclick=()=>{
-  ytSavedMode="channel";
-  document.getElementById("ytSavedC").style.cssText="background:var(--brand);color:#fff;border:0;padding:8px 16px;cursor:pointer";
-  document.getElementById("ytSavedV").style.cssText="background:#fff;border:0;padding:8px 16px;cursor:pointer;color:var(--muted)";
-  ytLoadSaved();
-};
 
-// ── 채널 분석 (다음 단계) ──
-function ytRenderAnalysis(){
-  document.getElementById("ytAnalysisBody").innerHTML =
-    '<div class="placeholder">채널 분석은 준비 중입니다.<br><span style="font-size:12.5px">먼저 <b>채널 찾기</b>에서 관심 채널을 ⭐로 수집해 두세요. 수집한 채널의 영상을 모아 어떤 주제가 먹혔는지 보여드릴 예정입니다.</span></div>';
+// ── 채널 분석 ──
+let ytChRows=[], ytAnaRows=[], ytAnaSort={key:"boom", asc:false};
+async function ytRenderAnalysis(){
+  const list=document.getElementById("ytChList"), cnt=document.getElementById("ytChCount");
+  document.getElementById("ytAnalysisBody").innerHTML="";
+  list.innerHTML='<div class="placeholder">불러오는 중…</div>';
+  if(!sb){ list.innerHTML='<div class="placeholder">로그인이 필요합니다.</div>'; return; }
+  try{
+    const {data,error}=await sb.from("yt_channels").select("*").order("created_at",{ascending:false});
+    if(error) throw error;
+    ytChRows=data||[]; cnt.textContent=`수집한 채널 ${ytChRows.length}개`;
+    if(!ytChRows.length){
+      list.innerHTML='<div class="placeholder">아직 수집한 채널이 없습니다. <b>채널 찾기</b>에서 <b>⭐</b>를 눌러 담아보세요.</div>';
+      return;
+    }
+    list.innerHTML=`<div class="tablewrap"><table><thead><tr>
+        <th style="width:36px"></th><th style="width:56px"></th><th>채널</th>
+        <th style="width:84px" class="c">구독자</th><th style="width:76px" class="c">영상수</th>
+        <th style="width:90px" class="c">평균조회</th><th style="width:90px" class="c">성과도</th>
+        <th style="width:96px" class="c">분석</th></tr></thead><tbody>`
+      + ytChRows.map((r,i)=>{
+          const perf = r.subs ? +((r.avg_views||0)/r.subs).toFixed(2) : null;
+          return `<tr><td class="c"><button class="unsavec" data-id="${esc(r.channel_id)}" title="수집 해제" style="border:0;background:none;cursor:pointer;font-size:16px">⭐</button></td>`
+          +`<td>${r.thumb?`<img src="${esc(r.thumb)}" style="width:40px;height:40px;border-radius:50%">`:""}</td>`
+          +`<td><a href="https://www.youtube.com/channel/${esc(r.channel_id)}" target="_blank"><b>${esc(r.title||"")}</b></a></td>`
+          +`<td class="c">${ytNum(r.subs)}</td><td class="c">${ytNum(r.video_count)}</td>`
+          +`<td class="c">${ytNum(r.avg_views)}</td>`
+          + ytGradeCell(perf,"perf")
+          +`<td class="c"><button class="anabtn" data-i="${i}" style="border:0;background:var(--brand);color:#fff;border-radius:7px;padding:5px 12px;cursor:pointer;font-size:12.5px;font-weight:600">영상 보기</button></td></tr>`;
+        }).join("") + `</tbody></table></div>`;
+    list.querySelectorAll(".unsavec").forEach(b=>b.onclick=async()=>{
+      const { data:{ user } }=await sb.auth.getUser();
+      await sb.from("yt_channels").delete().eq("member_id",user.id).eq("channel_id",b.dataset.id);
+      ytSavedChIds.delete(b.dataset.id); ytRenderAnalysis();
+    });
+    list.querySelectorAll(".anabtn").forEach(b=>b.onclick=()=>ytAnalyze(ytChRows[+b.dataset.i]));
+  }catch(e){
+    list.innerHTML=`<div class="placeholder" style="color:var(--warn)">${esc(e.message||String(e))}</div>`;
+  }
+}
+
+async function ytAnalyze(ch){
+  const body=document.getElementById("ytAnalysisBody");
+  body.innerHTML=`<div class="placeholder">📊 <b>${esc(ch.title||"")}</b> 영상을 가져오는 중…</div>`;
+  try{
+    const j=await ytCall({action:"channel_videos", channelId:ch.channel_id});
+    ytAnaRows=j.items||[];
+    ytAnaSort={key:"boom", asc:false};
+    if(!ytAnaRows.length){ body.innerHTML='<div class="placeholder">이 채널에서 가져올 영상이 없습니다.</div>'; return; }
+    // 가져온 값으로 채널 정보 갱신 (다음에 목록에서 최신 수치가 보이도록)
+    try{
+      const { data:{ user } }=await sb.auth.getUser();
+      await sb.from("yt_channels").update({
+        subs:j.channel.subs, video_count:j.channel.videoCount,
+        avg_views:j.channel.avgViews, last_sync:new Date().toISOString()
+      }).eq("member_id",user.id).eq("channel_id",ch.channel_id);
+    }catch(e){}
+    ytAnaRender(j.channel, j.cached);
+  }catch(e){
+    body.innerHTML=`<div class="placeholder" style="color:var(--warn)">${esc(e.message||String(e))}</div>`;
+  }
+}
+
+function ytAnaRender(ch, cached){
+  const body=document.getElementById("ytAnalysisBody");
+  const {key,asc}=ytAnaSort, sign=asc?1:-1;
+  const rows=ytAnaRows.slice().sort((a,b)=>{
+    let x=a[key], y=b[key];
+    if(key==="published"){ x=x?new Date(x).getTime():0; y=y?new Date(y).getTime():0; }
+    if(x==null&&y==null) return 0; if(x==null) return 1; if(y==null) return -1;
+    return ((typeof x==="string"||typeof y==="string")?String(x).localeCompare(String(y),"ko"):(x-y))*sign;
+  });
+  const best=ytAnaRows.reduce((m,r)=>(!m||r.views>m.views)?r:m, null);
+  const shorts=ytAnaRows.filter(r=>r.duration>0&&r.duration<=60).length;
+  const hot=ytAnaRows.filter(r=>ytGradeIdx(r.boom,"boom")>=3).length;
+
+  const COLS=[
+    {k:"title",t:"제목",align:"left"},
+    {k:"views",t:"조회수",w:84,desc:true},
+    {k:"likes",t:"좋아요",w:72,desc:true},
+    {k:"boom",t:"떡상배수",w:90,desc:true,tip:"채널 평균 조회수 대비 조회수 등급"},
+    {k:"published",t:"게시일",w:78,desc:true},
+  ];
+  const th=COLS.map(c=>{
+    const active=ytAnaSort.key===c.k, arrow=active?(ytAnaSort.asc?"↑":"↓"):"↕";
+    const tip=c.tip?`<span class="qmark js-tip" data-tip="${esc(c.tip)}">?</span>`:"";
+    return `<th class="sortable${active?" active":""}${c.align?"":" c"}" style="${c.w?`width:${c.w}px;`:""}" data-anasort="${c.k}">${c.t}${tip} <span class="arrow">${arrow}</span></th>`;
+  }).join("");
+
+  body.innerHTML=`
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:12px">
+      <div style="font-size:15px;font-weight:700;margin-bottom:8px">${esc(ch.title||"")}
+        ${cached?'<span style="font-size:11.5px;font-weight:400;color:var(--accent);margin-left:6px">💾 저장된 결과</span>':''}</div>
+      <div style="display:flex;gap:22px;flex-wrap:wrap;font-size:13px">
+        <span>구독자 <b>${ytNum(ch.subs)}</b></span>
+        <span>전체 영상 <b>${ytNum(ch.videoCount)}</b></span>
+        <span>최근 ${ytAnaRows.length}개 평균조회 <b>${ytNum(ch.avgViews)}</b></span>
+        <span>숏폼 <b>${shorts}</b> / 롱폼 <b>${ytAnaRows.length-shorts}</b></span>
+        <span>히트작(HOT↑) <b style="color:#ea580c">${hot}</b>개</span>
+      </div>
+      ${best?`<div style="margin-top:9px;font-size:13px;color:var(--muted)">최고 조회수 —
+        <a href="https://www.youtube.com/watch?v=${esc(best.videoId)}" target="_blank"><b>${esc(best.title)}</b></a>
+        (${ytNum(best.views)}회)</div>`:""}
+    </div>
+    <div class="tablewrap"><table><thead><tr><th style="width:74px"></th>${th}</tr></thead><tbody>`
+    + rows.map(r=>{
+        const isShort=r.duration>0&&r.duration<=60;
+        const mmss=r.duration?`${Math.floor(r.duration/60)}:${String(r.duration%60).padStart(2,"0")}`:"";
+        return `<tr><td><a href="https://www.youtube.com/watch?v=${esc(r.videoId)}" target="_blank">`
+          +`<img src="${esc(r.thumb||"")}" style="width:64px;height:36px;object-fit:cover;border-radius:4px"></a></td>`
+          +`<td><a href="https://www.youtube.com/watch?v=${esc(r.videoId)}" target="_blank">${esc(r.title)}</a>`
+          +` <span style="font-size:11px;color:var(--muted)">${isShort?"🩳숏폼":mmss}</span></td>`
+          +`<td class="c">${ytNum(r.views)}</td>`
+          +`<td class="c" style="color:var(--muted)">${ytNum(r.likes)}</td>`
+          + ytGradeCell(r.boom,"boom")
+          +`<td class="c" style="color:var(--muted)">${ytAgo(r.published)}</td></tr>`;
+      }).join("")
+    + `</tbody></table></div>
+    <div style="font-size:12.5px;color:var(--muted);margin-top:9px">
+      떡상배수는 <b>이 채널 최근 ${ytAnaRows.length}개 평균</b> 기준입니다.
+      <b style="color:#ea580c">HOT</b> 이상인 영상의 주제·제목·썸네일이 이 채널에서 먹힌 방식입니다.
+    </div>`;
+  body.querySelectorAll("th[data-anasort]").forEach(h=>h.onclick=(e)=>{
+    if(e.target.classList.contains("qmark")) return;
+    const k=h.dataset.anasort;
+    if(ytAnaSort.key===k) ytAnaSort.asc=!ytAnaSort.asc;
+    else{ const col=COLS.find(c=>c.k===k); ytAnaSort={key:k, asc:!(col&&col.desc)}; }
+    ytAnaRender(ch, cached);
+  });
 }
 
 // ── CSV ──
