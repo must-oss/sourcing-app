@@ -78,6 +78,11 @@
     box-shadow:0 6px 18px rgba(0,0,0,.22)}
   .qmark:hover::before{content:"";position:absolute;left:50%;top:120%;transform:translateX(-50%);
     border:6px solid transparent;border-bottom-color:#111827;z-index:60}
+  /* 표 안(.tablewrap 은 overflow 가 있어 잘림)에서는 CSS 툴팁 대신 떠다니는 상자를 쓴다 */
+  .qmark.js-tip:hover::after,.qmark.js-tip:hover::before{display:none}
+  #tipbox{position:fixed;z-index:200;background:#111827;color:#fff;padding:9px 11px;border-radius:7px;
+    font-size:12px;font-weight:400;line-height:1.65;width:min(300px,72vw);text-align:left;
+    box-shadow:0 6px 18px rgba(0,0,0,.22);pointer-events:none;display:none}
   .kwlist{border:1px solid var(--line);border-radius:0 0 10px 10px;overflow:hidden;background:var(--card)}
   .kw{border-bottom:1px solid var(--line)}
   .kw:last-child{border-bottom:0}
@@ -871,6 +876,29 @@ document.querySelectorAll("nav.tabs button[data-tab]").forEach(b=>b.onclick=()=>
   showTab(b.dataset.tab);
 });
 
+// 표 안의 ? 툴팁 — 표는 스크롤 영역이라 CSS 툴팁이 잘려서, 화면 위에 띄운다
+(function(){
+  const box=document.createElement("div"); box.id="tipbox"; document.body.appendChild(box);
+  const hide=()=>{ box.style.display="none"; };
+  document.addEventListener("mouseover",e=>{
+    const q=e.target.closest && e.target.closest(".qmark.js-tip");
+    if(!q) return;
+    box.textContent=q.dataset.tip||"";
+    box.style.display="block";
+    const r=q.getBoundingClientRect();
+    const bw=box.offsetWidth, bh=box.offsetHeight;
+    let left=r.left+r.width/2-bw/2;
+    left=Math.max(8, Math.min(left, window.innerWidth-bw-8));
+    let top=r.bottom+8;
+    if(top+bh > window.innerHeight-8) top=Math.max(8, r.top-bh-8);   // 아래가 좁으면 위로
+    box.style.left=left+"px"; box.style.top=top+"px";
+  });
+  document.addEventListener("mouseout",e=>{
+    if(e.target.closest && e.target.closest(".qmark.js-tip")) hide();
+  });
+  window.addEventListener("scroll", hide, true);
+})();
+
 // ---------- 유튜브 리서치 ----------
 // 유튜브 API 키는 서버(Edge Function)에만 있고, 브라우저는 결과만 받는다.
 let ytRows=[], ytMode="video_search";
@@ -883,8 +911,10 @@ const YT_COLS_V=[
   {k:"subs",    t:"구독자",   w:80,  desc:true},
   {k:"views",   t:"조회수",   w:84,  desc:true},
   {k:"likes",   t:"좋아요",   w:72,  desc:true},
-  {k:"perf",    t:"성과도",   w:70,  desc:true},
-  {k:"boom",    t:"떡상배수", w:76,  desc:true},
+  {k:"perf",    t:"성과도",   w:84,  desc:true,
+   tip:"조회수 ÷ 구독자수 — 구독자 규모에 비해 얼마나 터졌는가. 구독자가 적은데 조회수가 높을수록 등급이 올라갑니다. (LOW 0.5 미만 · GOOD 0.5~1 · GREAT 1~3 · HOT 3~10 · VIRAL 10 이상)"},
+  {k:"boom",    t:"떡상배수", w:90,  desc:true,
+   tip:"조회수 ÷ 그 채널의 평균 조회수 — 그 채널 안에서 이 영상만 유독 잘된 정도. 구독자가 많은 채널의 히트작을 찾을 때 봅니다. (LOW 1 미만 · GOOD 1~1.5 · GREAT 1.5~3 · HOT 3~10 · VIRAL 10 이상)"},
   {k:"published", t:"게시일", w:80,  desc:true},
 ];
 const YT_COLS_C=[
@@ -893,8 +923,10 @@ const YT_COLS_C=[
   {k:"desc",      t:"설명",     w:null, align:"left", noSort:true},
   {k:"subs",      t:"구독자",   w:84,  desc:true},
   {k:"videoCount",t:"영상수",   w:76,  desc:true},
-  {k:"avgViews",  t:"평균조회", w:90,  desc:true},
-  {k:"perf",      t:"성과도",   w:76,  desc:true},
+  {k:"avgViews",  t:"평균조회", w:90,  desc:true,
+   tip:"채널 전체 조회수 ÷ 영상 수 — 이 채널이 영상 하나당 보통 어느 정도 나오는지."},
+  {k:"perf",      t:"성과도",   w:90,  desc:true,
+   tip:"평균 조회수 ÷ 구독자수 — 구독자 규모에 비해 이 채널이 평소 얼마나 잘 나오는가. (LOW 0.5 미만 · GOOD 0.5~1 · GREAT 1~3 · HOT 3~10 · VIRAL 10 이상)"},
 ];
 
 const ytNum = n => (n==null||n==="") ? "-" : Number(n).toLocaleString();
@@ -1008,7 +1040,9 @@ function ytRender(){
     if(c.noSort) return `<th style="${c.w?`width:${c.w}px;`:""}"></th>`;
     const active=ytSort.key===c.k, arrow=active?(ytSort.asc?"↑":"↓"):"↕";
     const style=(c.w?`width:${c.w}px;`:"")+(c.align==="right"?"text-align:right;":"");
-    return `<th class="sortable${active?" active":""}${c.align?"":" c"}" style="${style}" data-ytsort="${c.k}">${c.t} <span class="arrow">${arrow}</span></th>`;
+    // 계산해서 만든 지표는 제목 옆에 ? 를 붙여 산식을 보여준다
+    const tip=c.tip?`<span class="qmark js-tip" data-tip="${esc(c.tip)}">?</span>`:"";
+    return `<th class="sortable${active?" active":""}${c.align?"":" c"}" style="${style}" data-ytsort="${c.k}">${c.t}${tip} <span class="arrow">${arrow}</span></th>`;
   }).join("");
 
   const tr = rows.map(r=>{
@@ -1045,7 +1079,10 @@ function ytRender(){
         `<span style="color:#c8ccd2">→</span>`)}
       <span style="margin-left:8px"><b style="color:#ea580c">HOT</b>·<b style="color:#dc2626">VIRAL</b> 이 눈여겨볼 영상입니다</span>
     </div>`;
-  box.querySelectorAll("th[data-ytsort]").forEach(h=>h.onclick=()=>ytSetSort(h.dataset.ytsort));
+  box.querySelectorAll("th[data-ytsort]").forEach(h=>h.onclick=(e)=>{
+    if(e.target.classList.contains("qmark")) return;   // ? 를 눌렀을 땐 정렬하지 않음
+    ytSetSort(h.dataset.ytsort);
+  });
 }
 
 document.getElementById("ytRun").onclick=async()=>{
