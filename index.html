@@ -492,7 +492,8 @@
           </summary>
           <div style="padding:8px 14px 0;font-size:12px;color:var(--muted)">
             아래 조건은 <b>재검색 없이 즉시</b> 적용됩니다. ·
-            <span style="color:var(--warn)">검색어 · 정렬 · 기간</span>을 바꿀 때만 1회 차감
+            <span style="color:var(--warn)">검색어 · 정렬 · 기간</span>을 바꿀 때만 1회 차감 ·
+            수집은 <b>4분 미만</b> 영상만, 기본 표시는 <b>60초 이하</b>
           </div>
           <div style="padding:14px" class="ytf">
             <div class="row"><label>조회수</label>
@@ -505,9 +506,9 @@
               <input type="number" id="ytfLikesMin" placeholder="최소 이상"></div>
             <div class="row"><label>형태</label>
               <select id="ytfForm">
-                <option value="">전체 (숏폼+롱폼)</option>
-                <option value="short">숏폼만 (60초 이하)</option>
-                <option value="long">롱폼만 (숏폼 제거)</option>
+                <option value="short" selected>숏폼만 (60초 이하)</option>
+                <option value="">전체 (4분 미만 전부)</option>
+                <option value="long">60초 초과 (1~4분)</option>
               </select></div>
             <div class="row" style="grid-column:1/-1"><label>성과도</label><span id="ytfPerf"></span></div>
             <div class="row" style="grid-column:1/-1"><label>떡상배수</label><span id="ytfBoom"></span></div>
@@ -629,7 +630,15 @@
             ① 검색어 입력 (예: 갱년기 영양제) → ② <b>성과도</b> 높은 순으로 정렬된 결과 확인 →
             ③ <b>HOT · VIRAL</b> 표시된 영상의 제목·썸네일 열어보기 → ④ CSV로 저장해 비교
           </div>
-          <p><b>결과 필터</b> — 형태(숏폼 60초 이하·롱폼) / 조회수 / 구독자 / 좋아요 / 등급 / 결과 내 검색<br>
+          <div class="box">
+            <b>검색은 짧은 영상만 가져옵니다</b><br>
+            한 번에 받을 수 있는 50개를 쇼츠에 몰아주려고, 검색 단계에서 <b>4분 미만</b> 영상만 요청합니다.
+            유튜브가 길이로 잘라주는 최소 단위가 4분이라 1~4분짜리가 섞여 오는데,
+            결과 화면은 <b>60초 이하</b>만 켜진 상태로 시작합니다.
+            1~4분도 보려면 결과 필터의 <b>형태</b>를 바꾸세요 — 이미 받아온 것이라 검색 횟수는 들지 않습니다.
+            <span style="color:var(--muted)">20분짜리 롱폼은 이 도구로는 검색되지 않습니다.</span>
+          </div>
+          <p><b>결과 필터</b> — 형태(60초 이하·1~4분) / 조회수 / 구독자 / 좋아요 / 등급 / 결과 내 검색<br>
              <span style="color:var(--muted)">"구독자 1만 이하 + 조회수 5만 이상" 처럼 좁히면 숨은 성공작이 잘 보입니다.</span></p>
 
           <div class="box" style="border-left-color:var(--warn)">
@@ -1414,7 +1423,7 @@ function ytfResetAll(){
   ["ytfViewsMin","ytfViewsMax","ytfSubsMin","ytfSubsMax","ytfLikesMin","ytfText"].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value="";
   });
-  const f=document.getElementById("ytfForm"); if(f) f.value="";
+  const f=document.getElementById("ytfForm"); if(f) f.value="short";   // 기본은 숏폼
   [0,1,2,3,4].forEach(i=>{ ytfPerfOn.add(i); ytfBoomOn.add(i); });
   ytRenderChips(); ytRender();
 }
