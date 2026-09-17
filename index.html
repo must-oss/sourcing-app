@@ -6,48 +6,67 @@
 <title>소싱 웹앱</title>
 <style>
   :root{
-    --bg:#f6f7f9; --card:#fff; --ink:#1a1d24; --muted:#6b7280; --line:#e5e7eb;
-    --brand:#2f5496; --brand2:#3b6fd4; --accent:#0e9f6e; --warn:#b45309; --band:#eef3fb;
+    --bg:#f7f8fa; --card:#fff; --ink:#16191f; --muted:#70757e; --line:#e8eaee;
+    --brand:#3550cf; --brand2:#2b42ad; --accent:#0d9f6e; --warn:#c2410c; --band:#f3f5fb;
+    --soft:#f4f6f9; --ring:rgba(53,80,207,.12);
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);
-    font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;font-size:14px}
-  a{color:var(--brand2)}
+    font-family:"Pretendard Variable","Pretendard","Apple SD Gothic Neo","Malgun Gothic",
+      -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    font-size:14px;line-height:1.55;letter-spacing:-.011em;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  a{color:var(--brand2);text-decoration:none}
+  a:hover{text-decoration:underline}
+  ::selection{background:var(--ring)}
   .hidden{display:none!important}
   /* 상단바 */
-  header{position:sticky;top:0;z-index:10;background:var(--brand);color:#fff;
-    display:flex;align-items:center;gap:16px;padding:10px 16px}
-  header .logo{font-weight:700;font-size:16px}
+  header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.92);
+    backdrop-filter:saturate(180%) blur(8px);border-bottom:1px solid var(--line);
+    display:flex;align-items:center;gap:14px;padding:11px 20px}
+  header .logo{font-weight:800;font-size:16px;color:var(--ink);letter-spacing:-.02em}
   header .spacer{flex:1}
-  header .who{font-size:12px;opacity:.9}
-  header button{background:rgba(255,255,255,.15);color:#fff;border:0;border-radius:6px;
-    padding:6px 12px;cursor:pointer;font-size:13px}
-  header button:hover{background:rgba(255,255,255,.28)}
+  header .who{font-size:12.5px;color:var(--muted)}
+  header button{background:#fff;color:var(--muted);border:1px solid var(--line);border-radius:8px;
+    padding:6px 13px;cursor:pointer;font-size:12.5px;transition:.12s}
+  header button:hover{border-color:#cfd4dc;color:var(--ink)}
   /* 탭 */
-  nav.tabs{display:flex;gap:2px;background:var(--card);border-bottom:1px solid var(--line);padding:0 12px;
-    position:sticky;top:44px;z-index:9;overflow-x:auto}
-  nav.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:12px 16px;
-    cursor:pointer;font-size:14px;color:var(--muted);white-space:nowrap}
+  nav.tabs{display:flex;gap:2px;background:var(--card);border-bottom:1px solid var(--line);padding:0 20px;
+    position:sticky;top:46px;z-index:9;overflow-x:auto}
+  nav.tabs button{background:none;border:0;border-bottom:2px solid transparent;padding:13px 15px;
+    cursor:pointer;font-size:13.5px;color:var(--muted);white-space:nowrap;font-weight:500;transition:.12s}
+  nav.tabs button:hover{color:var(--ink)}
   nav.tabs button.active{color:var(--brand);border-bottom-color:var(--brand);font-weight:700}
   nav.tabs button:disabled{color:#c0c4cc;cursor:not-allowed}
-  main{max-width:1100px;margin:0 auto;padding:16px}
+  main{max-width:min(1720px,97vw);margin:0 auto;padding:18px 20px 60px}
   .meta{color:var(--muted);font-size:12px;margin:2px 0 14px}
   .previewbadge{display:inline-block;background:#fff7ed;color:var(--warn);border:1px solid #fed7aa;
     border-radius:6px;padding:3px 8px;font-size:12px;margin-left:8px}
   /* 컨트롤 */
   .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
-  .toolbar input,.toolbar select{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#fff}
+  .toolbar input,.toolbar select{padding:8px 11px;border:1px solid var(--line);border-radius:9px;
+    font-size:13.5px;background:#fff;color:var(--ink);transition:.12s}
+  .toolbar input:focus,.toolbar select:focus{outline:0;border-color:var(--brand);box-shadow:0 0 0 3px var(--ring)}
+  input,select,textarea,button{font-family:inherit;letter-spacing:inherit}
   .toolbar input[type=search]{min-width:220px;flex:1}
   .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
   .seg button{background:#fff;border:0;padding:8px 14px;cursor:pointer;font-size:13px;color:var(--muted)}
   .seg button.active{background:var(--brand);color:#fff;font-weight:600}
   .count{color:var(--muted);font-size:12px;margin-left:auto}
   /* 테이블 */
-  .tablewrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:10px}
+  .tablewrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:12px}
   table{border-collapse:collapse;width:100%;font-size:13px}
-  th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
-  th{background:#f2f4f8;position:sticky;top:0;font-weight:600;color:#374151;white-space:nowrap}
+  th,td{padding:11px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr{transition:background .1s}
+  tbody tr:hover{background:#fafbfd}
+  th{background:var(--soft);position:sticky;top:0;font-weight:600;color:#4a5160;white-space:nowrap;
+    font-size:12.5px;letter-spacing:0}
   td.c,th.c{text-align:center;white-space:nowrap}
+  td{font-variant-numeric:tabular-nums}
+  /* 표 안의 제목 링크는 본문색, 밑줄 없음 */
+  td a{color:var(--ink);text-decoration:none}
+  td a:hover{color:var(--brand);text-decoration:none}
   tr.dateband td{background:var(--band)}
   .chan{display:inline-block;background:#eef2ff;color:#3730a3;border-radius:5px;padding:1px 7px;font-size:12px}
   .tcom{color:#9333ea}
@@ -356,6 +375,34 @@
         #tab-youtube .chip:hover{border-color:var(--brand);color:var(--brand)}
         #tab-youtube .chip .x{color:#c8ccd2;font-weight:700}
         #tab-youtube .chip .x:hover{color:var(--warn)}
+        /* 썸네일 + 재생시간 배지 */
+        .ythumb{display:block;position:relative;border-radius:7px;overflow:hidden;background:#eef0f4}
+        .ythumb img{width:100%;height:100%;object-fit:cover;display:block}
+        .ythumb .dur{position:absolute;right:4px;bottom:4px;background:rgba(0,0,0,.78);color:#fff;
+          font-size:11px;font-weight:600;padding:1px 5px;border-radius:4px;letter-spacing:0;
+          font-variant-numeric:tabular-nums}
+        a.vt{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+          font-size:13.5px;line-height:1.45;color:var(--ink)}
+        a.vt:hover{color:var(--brand)}
+        /* 카드 보기 */
+        .ycards{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:14px}
+        .ycard{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;
+          display:flex;flex-direction:column;transition:.14s}
+        .ycard:hover{border-color:#cdd3de;box-shadow:0 6px 18px rgba(20,25,40,.07);transform:translateY(-1px)}
+        .ycard .ythumb{width:100%;aspect-ratio:16/9;border-radius:0}
+        .ycard .body{padding:10px 12px 12px;display:flex;flex-direction:column;gap:7px;flex:1}
+        .ycard .ttl{font-size:13px;line-height:1.45;font-weight:600;color:var(--ink);
+          display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+        .ycard .sub{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+        .ycard .ch{display:flex;align-items:center;gap:6px;font-size:12px;color:#4a5160;
+          border-top:1px solid var(--line);padding-top:8px;margin-top:auto}
+        .ycard .ch img{width:22px;height:22px;border-radius:50%;flex:0 0 22px}
+        .ycard .g{display:flex;gap:6px;border-top:1px solid var(--line);padding-top:8px}
+        .ycard .g > div{flex:1;text-align:center}
+        .ycard .g .lb{font-size:10.5px;color:var(--muted);margin-bottom:2px}
+        .ycard .star{position:absolute;left:6px;top:6px;z-index:2;border:0;background:rgba(0,0,0,.45);
+          color:#fff;border-radius:7px;width:26px;height:26px;cursor:pointer;font-size:14px;line-height:1}
+        .ycard .top{position:relative}
         /* 등록 채널 칩 — 수십 개여도 한눈에 */
         #tab-youtube .chchip{display:inline-flex;align-items:center;background:#fff;border:1px solid var(--line);
           border-radius:999px;padding:5px 10px 5px 8px;font-size:12.5px;cursor:pointer;margin:0 6px 6px 0;
@@ -390,7 +437,7 @@
           <a href="#" data-goguide="1" style="cursor:pointer"><b>📖 보는 법</b></a></div>
 
         <div class="toolbar">
-          <input type="search" id="ytQ" placeholder="검색어 (예: 콜라겐, 갱년기 영양제)" style="min-width:240px;flex:1">
+          <input type="search" id="ytQ" placeholder="검색어 (예: 콜라겐, 갱년기 영양제)" style="min-width:260px;flex:1"><span class="qmark js-tip" data-tip="한 번 검색하면 유튜브가 돌려주는 최대치인 50개를 받아옵니다. 그 이상은 API를 한 번 더 써야 해서 횟수가 이중으로 차감됩니다. 더 좁히려면 기간·정렬을 바꿔 검색하세요.">?</span>
           <select id="ytOrder">
             <option value="relevance">관련도순</option>
             <option value="viewCount">조회수순</option>
@@ -403,7 +450,11 @@
             <option value="90">최근 3개월</option>
             <option value="365">최근 1년</option>
           </select>
-          <button id="ytRun" style="border:0;background:var(--brand);color:#fff;border-radius:8px;padding:9px 20px;cursor:pointer;font-weight:600">검색</button>
+          <button id="ytRun" style="border:0;background:var(--brand);color:#fff;border-radius:9px;padding:9px 20px;cursor:pointer;font-weight:600">검색</button>
+          <div class="seg" id="ytView" style="margin-left:6px">
+            <button data-view="table" class="active" title="표로 보기">▤</button>
+            <button data-view="card" title="카드로 보기">▦</button>
+          </div>
           <span class="count" id="ytQuota"></span>
         </div>
 
@@ -414,10 +465,9 @@
             🔎 결과 필터 <span class="count" id="ytfCount" style="font-weight:400"></span>
             <span style="font-weight:400;font-size:12px;color:var(--accent);margin-left:6px">검색 횟수 차감 없음</span>
           </summary>
-          <div style="padding:6px 14px 0;font-size:12px;color:var(--muted)">
-            이미 받아온 결과에서 걸러내는 것이라 <b>몇 번을 바꿔도 횟수가 줄지 않습니다.</b>
-            숏폼·롱폼도 한 번에 수집되므로 형태를 바꿔도 재검색하지 않습니다.
-            <span style="color:var(--warn)">검색어·정렬·기간</span>을 바꿔 다시 검색할 때만 1회 차감됩니다.
+          <div style="padding:8px 14px 0;font-size:12px;color:var(--muted)">
+            아래 조건은 <b>재검색 없이 즉시</b> 적용됩니다. ·
+            <span style="color:var(--warn)">검색어 · 정렬 · 기간</span>을 바꿀 때만 1회 차감
           </div>
           <div style="padding:14px" class="ytf">
             <div class="row"><label>조회수</label>
@@ -1082,8 +1132,8 @@ document.querySelectorAll("[data-goguide]").forEach(a=>a.onclick=(e)=>{
     const bw=box.offsetWidth, bh=box.offsetHeight;
     let left=r.left+r.width/2-bw/2;
     left=Math.max(8, Math.min(left, window.innerWidth-bw-8));
-    let top=r.bottom+8;
-    if(top+bh > window.innerHeight-8) top=Math.max(8, r.top-bh-8);   // 아래가 좁으면 위로
+    let top=r.top-bh-9;                       // 기본은 위 — 마우스 포인터가 글자를 가리지 않게
+    if(top < 8) top=r.bottom+9;               // 위가 좁을 때만 아래로
     box.style.left=left+"px"; box.style.top=top+"px";
   });
   document.addEventListener("mouseout",e=>{
@@ -1094,15 +1144,15 @@ document.querySelectorAll("[data-goguide]").forEach(a=>a.onclick=(e)=>{
 
 // ---------- 유튜브 리서치 ----------
 // 유튜브 API 키는 서버(Edge Function)에만 있고, 브라우저는 결과만 받는다.
-let ytRows=[], ytMode="video_search", ytPane="video";
+let ytRows=[], ytMode="video_search", ytPane="video", ytView="table";
 let ytSort={key:"perf", asc:false};
 const YT_HIST="yt_history_v1";
 
 const YT_COLS_V=[
   {k:"save",    t:"",        w:36,  noSort:true},
-  {k:"thumb",   t:"",        w:74,  noSort:true},
+  {k:"thumb",   t:"",        w:132, noSort:true},
   {k:"title",   t:"제목",     w:null, align:"left"},
-  {k:"channel", t:"채널",     w:120, align:"left"},
+  {k:"channel", t:"채널",     w:130, align:"left"},
   {k:"subs",    t:"구독자",   w:78,  desc:true},
   {k:"views",   t:"조회수",   w:82,  desc:true},
   {k:"likes",   t:"좋아요",   w:70,  desc:true},
@@ -1122,7 +1172,19 @@ const YT_COLS_C=[
 ];
 
 const ytNum = n => (n==null||n==="") ? "-" : Number(n).toLocaleString();
-function ytAgo(s){
+// 썸네일 + 우하단 재생시간 배지 (제목 옆에 따로 표기하지 않는다)
+function ytThumb(r, w, h){
+  const d=r.duration||0;
+  const mmss = d ? (d>=3600 ? `${Math.floor(d/3600)}:${String(Math.floor(d%3600/60)).padStart(2,"0")}:${String(d%60).padStart(2,"0")}`
+                            : `${Math.floor(d/60)}:${String(d%60).padStart(2,"0")}`) : "";
+  return `<a class="ythumb" style="width:${w}px;height:${h}px" href="https://www.youtube.com/watch?v=${esc(r.videoId)}" target="_blank">`
+    +`<img src="${esc(r.thumb||"")}" alt="">`
+    + (mmss?`<span class="dur">${mmss}</span>`:"")
+    +`</a>`;
+}
+// 게시일은 '26.05.07' 형태로 (상대 표기는 마우스 올렸을 때)
+function ytAgo(s){ return s ? String(s).slice(2,10).replace(/-/g,".") : ""; }
+function ytRel(s){
   if(!s) return "";
   const d=Math.floor((Date.now()-new Date(s).getTime())/86400000);
   return d<1?"오늘":d<30?`${d}일 전`:d<365?`${Math.floor(d/30)}개월 전`:`${Math.floor(d/365)}년 전`;
@@ -1353,6 +1415,55 @@ async function ytToggleSave(r){
 }
 
 // ── 결과 표 ──
+// 카드 보기 — 썸네일 중심으로 훑어볼 때
+function ytRenderCards(rows){
+  const box=document.getElementById("ytResults");
+  const g=(v,k)=>{ const x=ytGrade(v,k); return x?`<span style="${x.css};font-size:12px;font-weight:700">${x.name}</span>`:'<span style="color:#c8ccd2">-</span>'; };
+  if(ytMode!=="video_search"){
+    box.innerHTML=`<div class="ycards">`+rows.map((r,i)=>`
+      <div class="ycard"><div class="body">
+        <div class="ch" style="border:0;padding:0;margin:0">
+          ${r.thumb?`<img src="${esc(r.thumb)}">`:""}
+          <a class="ttl" style="-webkit-line-clamp:1" href="https://www.youtube.com/channel/${esc(r.channelId)}" target="_blank">${esc(r.title)}</a>
+          <button class="ytstar" data-i="${i}" style="margin-left:auto;border:0;background:none;cursor:pointer;font-size:15px">${ytSavedChIds.has(r.channelId)?"⭐":"☆"}</button>
+        </div>
+        <div class="sub">${esc((r.desc||"").slice(0,60))}</div>
+        <div class="g">
+          <div><div class="lb">구독자</div><b>${ytNum(r.subs)}</b></div>
+          <div><div class="lb">영상수</div><b>${ytNum(r.videoCount)}</b></div>
+          <div><div class="lb">평균조회</div><b>${ytNum(r.avgViews)}</b></div>
+          <div><div class="lb">성과도</div>${g(r.perf,"perf")}</div>
+        </div>
+      </div></div>`).join("")+`</div>`;
+  }else{
+    box.innerHTML=`<div class="ycards">`+rows.map((r,i)=>`
+      <div class="ycard">
+        <div class="top">
+          <button class="ytstar star" data-i="${i}">${ytSavedIds.has(r.videoId)?"⭐":"☆"}</button>
+          ${ytThumb(r,0,0)}
+        </div>
+        <div class="body">
+          <a class="ttl" href="https://www.youtube.com/watch?v=${esc(r.videoId)}" target="_blank">${esc(r.title)}</a>
+          <div class="sub">조회수 ${ytNum(r.views)} · 좋아요 ${ytNum(r.likes)} · ${ytAgo(r.published)}</div>
+          <div class="ch">${esc(r.channel||"")}<span style="margin-left:auto;color:var(--muted)">구독자 ${ytNum(r.subs)}</span></div>
+          <div class="g">
+            <div><div class="lb">성과도</div>${g(r.perf,"perf")}</div>
+            <div><div class="lb">떡상배수</div>${g(r.boom,"boom")}</div>
+          </div>
+        </div>
+      </div>`).join("")+`</div>`;
+  }
+  box.insertAdjacentHTML("beforeend", ytLegend(rows.length));
+  box.querySelectorAll(".ytstar").forEach(b=>b.onclick=(e)=>{ e.preventDefault(); ytToggleSave(rows[+b.dataset.i]); });
+}
+function ytLegend(n){
+  return `<div style="font-size:12.5px;color:var(--muted);margin-top:12px;line-height:1.9">
+      ${n}개 표시 ·
+      ${YT_GRADES.map(g=>`<span style="${g.css};padding:1px 6px;font-size:12px">${g.name}</span>`).join(`<span style="color:#c8ccd2">→</span>`)}
+      <span style="margin-left:6px"><b style="color:#ea580c">HOT</b>·<b style="color:#dc2626">VIRAL</b> 주목 · ⭐로 수집</span>
+    </div>`;
+}
+
 function ytRender(){
   const box=document.getElementById("ytResults");
   const cols = ytMode==="video_search" ? YT_COLS_V : YT_COLS_C;
@@ -1361,6 +1472,7 @@ function ytRender(){
   if(cnt) cnt.textContent = ytRows.length ? `${rows.length} / ${ytRows.length}개` : "";
   if(!ytRows.length){ box.innerHTML='<div class="placeholder">검색어를 입력하고 <b>검색</b>을 누르세요.</div>'; return; }
   if(!rows.length){ box.innerHTML='<div class="placeholder">필터에 맞는 결과가 없습니다. <b>필터 전체 해제</b>를 눌러보세요.</div>'; return; }
+  if(ytView==="card"){ ytRenderCards(rows); return; }
 
   const th = cols.map(c=>{
     if(c.noSort) return `<th style="${c.w?`width:${c.w}px;`:""}"></th>`;
@@ -1383,30 +1495,22 @@ function ytRender(){
         +`<td class="c">${ytNum(r.avgViews)}</td>`
         + ytGradeCell(r.perf,"perf") + `</tr>`;
     }
-    const isShort = r.duration>0 && r.duration<=60;
-    const mmss = r.duration ? `${Math.floor(r.duration/60)}:${String(r.duration%60).padStart(2,"0")}` : "";
     return `<tr data-i="${i}">`
       + star(ytSavedIds.has(r.videoId))
-      +`<td><a href="https://www.youtube.com/watch?v=${esc(r.videoId)}" target="_blank">`
-        +`<img src="${esc(r.thumb)}" style="width:64px;height:36px;object-fit:cover;border-radius:4px"></a></td>`
-      +`<td><a href="https://www.youtube.com/watch?v=${esc(r.videoId)}" target="_blank">${esc(r.title)}</a>`
-        +` <span style="font-size:11px;color:var(--muted)">${isShort?"🩳숏폼":mmss}</span></td>`
-      +`<td style="font-size:12.5px">${esc(r.channel||"")}</td>`
+      +`<td>${ytThumb(r,120,68)}</td>`
+      +`<td><a class="vt" href="https://www.youtube.com/watch?v=${esc(r.videoId)}" target="_blank">${esc(r.title)}</a></td>`
+      +`<td style="font-size:12.5px;color:#4a5160">${esc(r.channel||"")}</td>`
       +`<td class="c">${ytNum(r.subs)}</td>`
       +`<td class="c">${ytNum(r.views)}</td>`
       +`<td class="c" style="color:var(--muted)">${ytNum(r.likes)}</td>`
       + ytGradeCell(r.perf,"perf")
       + ytGradeCell(r.boom,"boom")
-      +`<td class="c" style="color:var(--muted)" title="${esc(r.published||"")}">${ytAgo(r.published)}</td>`
+      +`<td class="c" style="color:var(--muted)" title="${esc(ytRel(r.published))}">${ytAgo(r.published)}</td>`
       +`</tr>`;
   }).join("");
 
-  box.innerHTML=`<div class="tablewrap"><table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></div>
-    <div style="font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.9">
-      ${rows.length}개 표시 ·
-      ${YT_GRADES.map(g=>`<span style="${g.css};padding:1px 6px;font-size:12px">${g.name}</span>`).join(`<span style="color:#c8ccd2">→</span>`)}
-      <span style="margin-left:6px"><b style="color:#ea580c">HOT</b>·<b style="color:#dc2626">VIRAL</b> 주목 · ⭐로 수집</span>
-    </div>`;
+  box.innerHTML=`<div class="tablewrap"><table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></div>`
+    + ytLegend(rows.length);
   box.querySelectorAll("th[data-ytsort]").forEach(h=>h.onclick=(e)=>{
     if(e.target.classList.contains("qmark")) return;
     ytSetSort(h.dataset.ytsort);
@@ -1447,6 +1551,11 @@ document.getElementById("ytQ").addEventListener("keydown",e=>{ if(e.key==="Enter
 });
 document.getElementById("ytfReset").onclick=ytfResetAll;
 document.querySelectorAll("#ytNav button").forEach(b=>b.onclick=()=>ytShowPane(b.dataset.yt));
+document.querySelectorAll("#ytView button").forEach(b=>b.onclick=()=>{
+  ytView=b.dataset.view;
+  document.querySelectorAll("#ytView button").forEach(x=>x.classList.toggle("active", x===b));
+  if(ytRows.length) ytRender();
+});
 
 // ── 수집함 (영상 전용) ──
 async function ytLoadSaved(){
@@ -1632,14 +1741,10 @@ function ytAnaRender(ch, cached){
     ${best?`<div style="font-size:13px;color:var(--muted);margin-bottom:10px">최고 조회수 —
       <a href="https://www.youtube.com/watch?v=${esc(best.videoId)}" target="_blank"><b>${esc(best.title)}</b></a>
       (${ytNum(best.views)}회)</div>`:""}
-    <div class="tablewrap"><table><thead><tr><th style="width:74px"></th>${th}</tr></thead><tbody>`
+    <div class="tablewrap"><table><thead><tr><th style="width:132px"></th>${th}</tr></thead><tbody>`
     + rows.map(r=>{
-        const isShort=r.duration>0&&r.duration<=60;
-        const mmss=r.duration?`${Math.floor(r.duration/60)}:${String(r.duration%60).padStart(2,"0")}`:"";
-        return `<tr><td><a href="https://www.youtube.com/watch?v=${esc(r.videoId)}" target="_blank">`
-          +`<img src="${esc(r.thumb||"")}" style="width:64px;height:36px;object-fit:cover;border-radius:4px"></a></td>`
-          +`<td><a href="https://www.youtube.com/watch?v=${esc(r.videoId)}" target="_blank">${esc(r.title)}</a>`
-          +` <span style="font-size:11px;color:var(--muted)">${isShort?"🩳숏폼":mmss}</span></td>`
+        return `<tr><td>${ytThumb(r,120,68)}</td>`
+          +`<td><a class="vt" href="https://www.youtube.com/watch?v=${esc(r.videoId)}" target="_blank">${esc(r.title)}</a></td>`
           +`<td class="c">${ytNum(r.views)}</td>`
           +`<td class="c" style="color:var(--muted)">${ytNum(r.likes)}</td>`
           + ytGradeCell(r.perf,"perf")
