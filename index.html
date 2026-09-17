@@ -473,9 +473,6 @@
             <option value="365">최근 1년</option>
           </select>
           <button id="ytRun" style="border:0;background:var(--brand);color:#fff;border-radius:9px;padding:9px 20px;cursor:pointer;font-weight:600">검색</button>
-          <button id="ytPreset" style="border:1px solid #f5c8a0;background:#fff7ed;color:#c2410c;
-            border-radius:9px;padding:9px 14px;cursor:pointer;font-weight:700;font-size:13px"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><path d="M12 3v4M12 17v4M4.9 7.5l2.9 2.9M16.2 13.6l2.9 2.9M3 12h4M17 12h4M4.9 16.5l2.9-2.9M16.2 10.4l2.9-2.9"/></svg>숨은 성공작</button>
-          <span class="qmark js-tip" data-tip="조회수 상위 50개를 가져온 뒤 구독자가 적은 채널만 남깁니다. 성과도가 높은 영상, 즉 작은 채널인데 터진 영상이 걸러집니다. 검색 1회가 차감됩니다.">?</span>
           <div class="seg" id="ytView" style="margin-left:6px">
             <button data-view="table" class="active" title="표로 보기">▤</button>
             <button data-view="card" title="카드로 보기">▦</button>
@@ -639,7 +636,7 @@
             <span style="color:var(--muted)">20분짜리 롱폼은 이 도구로는 검색되지 않습니다.</span>
           </div>
           <p><b>결과 필터</b> — 형태(60초 이하·1~4분) / 조회수 / 구독자 / 좋아요 / 등급 / 결과 내 검색<br>
-             <span style="color:var(--muted)">"구독자 1만 이하 + 조회수 5만 이상" 처럼 좁히면 숨은 성공작이 잘 보입니다.</span></p>
+             <span style="color:var(--muted)">"구독자 1만 이하 + 조회수 5만 이상" 처럼 좁히면 작은 채널의 대박이 잘 보입니다.</span></p>
 
           <div class="box" style="border-left-color:var(--warn)">
             <b>한 번에 50개만 나오는 이유</b><br>
@@ -660,9 +657,12 @@
             성과도(조회수÷구독자)는 <b>우리가 계산하는 값</b>이라 유튜브가 알지 못합니다. 유튜브가 제공하는
             정렬은 관련도·조회수·날짜뿐이고, 구독자 수는 영상이 아니라 채널 정보라 <b>50개를 받은 뒤에야</b>
             계산할 수 있습니다.<br><br>
-            대신 <b>🔥 숨은 성공작</b> 버튼이 같은 효과를 냅니다 —
-            <b>조회수 상위 50개</b>를 가져온 뒤 <b>구독자 5만 이하</b>만 남기고 성과도 GREAT 이상만 보여줍니다.
-            "조회수는 터졌는데 채널은 작다" = 성과도가 높다는 뜻이니까요.
+            대신 이렇게 하면 같은 효과가 납니다 —
+            정렬을 <b>조회수순</b>으로 놓고 검색한 뒤, 결과 필터에서 <b>구독자 상한</b>(예: 5만)을 걸고
+            성과도 <b>LOW·GOOD 칩을 끄세요.</b>
+            "조회수는 터졌는데 채널은 작다" = 성과도가 높다는 뜻이니까요.<br>
+            <span style="color:var(--muted)">필터는 이미 받아온 결과에서 거르는 것이라 검색 횟수가 들지 않습니다.
+            결과가 너무 적으면 구독자 상한을 올리거나 GOOD을 다시 켜세요.</span>
           </div>
 
           <div class="box">
@@ -1645,17 +1645,6 @@ document.getElementById("ytRun").onclick=async()=>{
 };
 document.getElementById("ytQ").addEventListener("keydown",e=>{ if(e.key==="Enter") document.getElementById("ytRun").click(); });
 
-// 🔥 숨은 성공작 — 유튜브는 성과도로 정렬해 주지 못하므로,
-//   '조회수 상위 50개'를 받아온 뒤 구독자 적은 채널만 남겨서 같은 효과를 낸다.
-document.getElementById("ytPreset").onclick=()=>{
-  if(!document.getElementById("ytQ").value.trim()){ document.getElementById("ytQ").focus(); return; }
-  document.getElementById("ytOrder").value="viewCount";     // 조회수 상위 50개 수집
-  ytfResetAll();
-  document.getElementById("ytfSubsMax").value=50000;        // 구독자 5만 이하만
-  [0,1].forEach(i=>ytfPerfOn.delete(i));                    // 성과도 LOW·GOOD 제외
-  ytSort={key:"perf", asc:false};
-  document.getElementById("ytRun").click();
-};
 ["ytfViewsMin","ytfViewsMax","ytfSubsMin","ytfSubsMax","ytfLikesMin","ytfText","ytfForm"].forEach(id=>{
   const el=document.getElementById(id);
   if(el) el.addEventListener(el.tagName==="SELECT"?"change":"input", ()=>{ if(ytRows.length) ytRender(); });
