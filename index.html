@@ -389,6 +389,40 @@
         a.vt{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
           font-size:13.5px;line-height:1.45;color:var(--ink)}
         a.vt:hover{color:var(--brand)}
+        /* 기획안 작성 */
+        .planbox{border:1px solid var(--line);border-radius:14px;background:#fff;overflow:hidden;margin-bottom:16px}
+        .planbox .hd{display:flex;align-items:center;gap:10px;padding:13px 16px;
+          background:var(--soft);border-bottom:1px solid var(--line);font-size:14px}
+        .planbox .hd button{margin-left:auto;border:0;background:var(--brand);color:#fff;border-radius:9px;
+          padding:8px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:.12s}
+        .planbox .hd button:hover{background:var(--brand2)}
+        .planbox .bd{padding:16px}
+        .planbox label{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;
+          margin:0 0 7px;color:var(--ink)}
+        .planbox label:not(:first-child){margin-top:18px}
+        .planbox .n{display:inline-flex;align-items:center;justify-content:center;width:21px;height:21px;
+          border-radius:50%;background:#e6f2ec;color:var(--brand2);font-size:11.5px;font-weight:800}
+        .planbox em{font-style:normal;font-size:11.5px;font-weight:600;color:var(--brand);
+          background:#eef7f2;border-radius:5px;padding:2px 7px}
+        .planbox em.opt{color:var(--muted);background:var(--soft)}
+        .planbox input,.planbox textarea{width:100%;border:1px solid var(--line);border-radius:10px;
+          padding:10px 12px;font-size:13.5px;font-family:inherit;color:var(--ink);background:#fff;transition:.12s}
+        .planbox textarea{resize:vertical;line-height:1.55;min-height:96px}
+        .planbox input:focus,.planbox textarea:focus{outline:0;border-color:var(--brand);box-shadow:0 0 0 3px var(--ring)}
+        .planbox .inline{display:flex;align-items:center;gap:8px}
+        .planbox .unit{font-size:13.5px;color:var(--muted)}
+        .planbox .sub{font-size:12px;color:var(--muted);margin-top:6px}
+        .planbox .sub.bad{color:var(--warn)}
+        .planout{border-radius:14px;overflow:hidden;background:#12161c}
+        .planout .hd{display:flex;align-items:center;gap:10px;padding:11px 14px;background:#1b212a}
+        .planout .lb{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;color:#8b95a5}
+        .planout .len{font-size:11.5px;color:#6b7686;margin-left:2px}
+        .planout .hd button{margin-left:auto;border:1px solid #333c49;background:#232b36;color:#dfe5ec;
+          border-radius:8px;padding:6px 14px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:.12s}
+        .planout .hd button:hover{background:#2c3644;border-color:#44505f}
+        .planout .hd button.done{background:var(--brand);border-color:var(--brand);color:#fff}
+        .planout pre{margin:0;padding:16px;max-height:520px;overflow:auto;color:#d7dee7;
+          font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.65;white-space:pre-wrap;word-break:break-word}
         /* 분석+ 버튼 */
         #ytPromptBox{position:fixed;inset:0;z-index:100;background:rgba(16,22,20,.45);
           display:flex;align-items:center;justify-content:center;padding:24px}
@@ -527,6 +561,7 @@
         <button data-yt="channel">채널 찾기</button>
         <button data-yt="saved"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3Z"/></svg>수집함</button>
         <button data-yt="analysis">채널 분석</button>
+        <button data-yt="plan">기획안 작성</button>
       </div>
 
       <!-- ── 검색 (영상/채널 공용) ── -->
@@ -604,6 +639,44 @@
           <span style="color:var(--muted)">(수집한 <b>채널</b>은 <b>채널 분석</b> 탭에 있습니다)</span></div>
         <div class="toolbar"><span class="count" id="ytSavedCount"></span></div>
         <div id="ytSavedList" class="placeholder">불러오는 중…</div>
+      </div>
+
+      <!-- ── 기획안 작성 ── -->
+      <div id="ytPanePlan" hidden>
+        <div class="hint">분석 리포트와 주제를 넣으면 <b>대본과 컷 시트를 만들어 달라는 프롬프트</b>가 완성됩니다.
+          <span style="color:var(--muted)">완성된 프롬프트를 복사해 제미나이에 붙여넣으세요.</span></div>
+
+        <div class="planbox">
+          <div class="hd">
+            <b>기획 프롬프트 만들기</b>
+            <button id="ytPlanApply">반영</button>
+          </div>
+          <div class="bd">
+            <label><span class="n">1</span>구조 분석 결과 <em>필수</em></label>
+            <textarea id="ytPlanReport" rows="6"
+              placeholder="영상 찾기에서 [분석+]로 받은 제미나이 답변을 통째로 붙여넣으세요 (## 1. 도입부 ~ ## 11. 한 줄 결론)"></textarea>
+            <div class="sub" id="ytPlanReportInfo"></div>
+
+            <label><span class="n">2</span>주제 <em>필수</em></label>
+            <input id="ytPlanTopic" type="text" placeholder="예: 갱년기 여성의 모발 가늘어짐">
+
+            <label><span class="n">3</span>영상 길이</label>
+            <div class="inline">
+              <input id="ytPlanSec" type="number" min="10" max="180" step="5" value="50" style="width:110px">
+              <span class="unit">초</span>
+            </div>
+
+            <label><span class="n">4</span>제품 <em class="opt">선택</em></label>
+            <input id="ytPlanProduct" type="text" placeholder="비워두면 제품 언급 없이 정보 콘텐츠로 기획됩니다">
+          </div>
+        </div>
+
+        <div class="planout" id="ytPlanOut" hidden>
+          <div class="hd"><span class="lb">Prompt</span>
+            <span class="len" id="ytPlanLen"></span>
+            <button id="ytPlanCopy">복사하기</button></div>
+          <pre id="ytPlanText"></pre>
+        </div>
       </div>
 
       <!-- ── 채널 분석 ── -->
@@ -1503,6 +1576,7 @@ function ytShowPane(name){
   document.getElementById("ytPaneSearch").hidden=!search;
   document.getElementById("ytPaneSaved").hidden=(name!=="saved");
   document.getElementById("ytPaneAnalysis").hidden=(name!=="analysis");
+  document.getElementById("ytPanePlan").hidden=(name!=="plan");
   if(search){
     const isVideo=(name==="video");
     ytMode=isVideo?"video_search":"channel_search";
@@ -1740,6 +1814,129 @@ async function ytToggleSave(r){
     }
   }
   ytRender();
+}
+
+// ── 기획 프롬프트 ──
+// 분석 리포트 + 주제를 끼워 넣어 완성된 프롬프트를 만든다.
+// 타겟·금지표현·제작조건은 늘 같아서 고정으로 둔다.
+function ytPlanPrompt({report, topic, sec, product}){
+  return `아래는 잘된 숏폼을 분해한 분석 리포트입니다.
+이 리포트의 구조를 빌려, 제가 지정한 주제로 새 숏폼을 기획해 주세요.
+대사를 베끼는 것이 아니라 구조만 가져옵니다.
+
+
+═══ 입력 ═══
+
+[분석 리포트]
+${report}
+
+
+[내 주제]
+${topic}
+
+[제품]
+${product || "(없음 — 제품 언급 없이 정보 콘텐츠로 기획해 주세요)"}
+
+[타겟]
+(리포트의 9-2 온도 단계를 따라 주세요)
+
+[영상 길이]
+${sec}초
+
+[금지 표현]
+건강기능식품·이너뷰티 표시광고 심의 대상입니다.
+효능을 단정하는 표현(치료·완치·사라집니다·개선됩니다·보장)을 쓰지 마세요.
+대신 정보 약속형("왜 그런지 알려드릴게요") 또는
+면죄부형("나이 탓이 아닙니다")으로 쓰세요.
+
+[제작 조건]
+실사 촬영 없음. 스톡 영상·이미지와 AI 생성 이미지, TTS 내레이션으로만 만듭니다.
+
+
+═══ 작업 규칙 ═══
+
+- 리포트의 §10 재사용 템플릿을 뼈대로 삼되, 문장은 전부 새로 쓰세요.
+  레퍼런스 대사와 3어절 이상 겹치면 안 됩니다.
+- 글자 수는 리포트 §3의 분당 글자 수와 평균 문장 길이를 따르세요.
+- 도입부는 리포트 §1-12(c)의 연결 공식을 유지하세요.
+  도입부에서 심은 것이 본문에서 회수되어야 합니다.
+- 리포트가 여러 장이면, 공통으로 나타나는 구조를 우선 채택하세요.
+- 확정할 수 없는 것은 "확인 필요"라고 쓰고 임의로 정하지 마세요.
+- 대본과 제목은 숫자를 한글로 쓰세요. TTS가 읽는 원고이기 때문입니다.
+  10만 → 십만 / 3개 → 세 개 / 2cm → 이 센티미터 / 30대 → 삼십 대
+  100% → 백 퍼센트 / 1~2주 → 일이 주
+- 자막은 반대로 아라비아 숫자를 쓰세요. 시인성 때문입니다.
+
+
+═══ 출력 ═══
+
+## 1. 구조 선택 근거
+- 어느 리포트의 뼈대를 채택했는가, 왜
+- 여러 장이라면 공통 구조가 무엇이었는가
+- 채택한 구조를 한 줄 공식으로 (A·B·C 형태)
+
+## 2. 도입부 후보 3개
+각각 "도입부 → 전환 → 해결" 3단으로.
+- 호출 대상이 명시돼 있을 것
+- 셋 중 무엇을 추천하는지와 이유
+- 이후 대본은 추천안 기준으로 작성
+
+## 3. 대본 (TTS 낭독용)
+
+| 구간 | 초 | 대사 | 글자 수 |
+|---|---|---|---|
+
+- 숫자는 전부 한글로 (삼백팔십만, 세 가지, 이 센티미터)
+- TTS가 어색하게 읽을 단어는 피하거나 풀어 쓰기
+- 한 문장이 25자를 넘으면 끊어 읽을 지점을 / 로 표시
+- 마지막에 총 글자 수와 분당 글자 수를 적고,
+  리포트 §3의 수치와 비교해 주세요
+
+## 4. 자막 원고
+대본을 리포트 §2-2의 다듬기 패턴대로 가공한 것.
+대사와 다른 부분은 (다듬음) 표시.
+
+| 초 | 자막 | 대사와 다른 점 |
+|---|---|---|
+
+- 대본에서 한글로 쓴 숫자는 자막에서 아라비아 숫자로 되돌리세요.
+  이 교체도 (다듬음)에 포함해 '숫자 표기' 패턴으로 표시해 주세요.
+
+## 5. 스타일 고정 문구
+모든 이미지 프롬프트 뒤에 붙일 공통 문구를 먼저 정해 주세요.
+인물이 여러 컷에 나오면 컷마다 얼굴이 달라지는 문제를 막기 위한 것입니다.
+- 인물 설정 (연령·성별·인종·복장)
+- 촬영 느낌 (조명·렌즈감·색온도)
+- 금지 요소 (텍스트 삽입, 워터마크, 왜곡된 손 등)
+
+영문 한 줄로 출력해 주세요.
+
+## 6. 컷 시트
+
+| 컷 | 초 | 대사 | 화면 설명 | 조달 방법 | 이미지 프롬프트 / 스톡 검색어 |
+|---|---|---|---|---|---|
+
+- 컷 수는 리포트 §5-7(d)의 제안을 따르세요
+- 조달 방법은 [AI 생성 / 스톡 영상 / 스톡 이미지 / 텍스트 카드] 중 하나
+- 이미지는 8~12장만 새로 만들고, 나머지 컷은 같은 이미지를
+  줌인·팬·크롭으로 나눠 쓰도록 설계하세요. 재사용하는 컷에는
+  "컷 3 재사용 + 천천히 줌인"처럼 적어 주세요
+- AI 프롬프트는 영문으로, §5의 스타일 고정 문구를 붙여서
+
+## 7. 표시 제목 · 썸네일 3안
+- 화면 상단에 띄울 제목 문구 3개
+- 각각 리포트 §1-11의 어떤 강화 기법을 쓴 것인지 표시
+- 썸네일로 쓸 장면 번호와 얹을 문구
+
+## 8. 규제 점검
+작성한 대본과 자막에서 심의에 걸릴 수 있는 문장을 찾아 표시하고,
+안전한 대체 문장을 함께 제시하세요.
+문제없으면 "해당 없음"이라고 쓰세요.
+
+## 9. 자기 점검
+- 레퍼런스 대사와 겹치는 표현이 있는가 (있으면 어디)
+- 도입부에서 심은 것이 본문에서 회수되는가 — 몇 초 지점에서
+- "○○에 좋은 것 5가지" 형태로 빠지지 않았는가`;
 }
 
 // ── 벤치마킹 분석 프롬프트 ──
@@ -2114,6 +2311,53 @@ document.getElementById("ytQ").addEventListener("keydown",e=>{ if(e.key==="Enter
 });
 document.getElementById("ytfReset").onclick=ytfResetAll;
 document.getElementById("ytHistBtn").onclick=()=>ytHistToggle();
+
+// 기획안 작성 — 반영 / 복사
+(function(){
+  const $=(id)=>document.getElementById(id);
+  const info=$("ytPlanReportInfo");
+  const gauge=()=>{
+    const n=$("ytPlanReport").value.trim().length;
+    info.className="sub"+(n && n<400 ? " bad" : "");
+    info.textContent = !n ? ""
+      : n<400 ? `${n.toLocaleString()}자 — 리포트가 잘린 것 같습니다. 11개 항목을 전부 붙여넣으세요.`
+              : `${n.toLocaleString()}자 붙여넣음`;
+  };
+  $("ytPlanReport").addEventListener("input", gauge);
+
+  $("ytPlanApply").onclick=()=>{
+    const report=$("ytPlanReport").value.trim();
+    const topic=$("ytPlanTopic").value.trim();
+    if(!report){ alert("구조 분석 결과를 붙여넣어 주세요.\n\n영상 찾기에서 [분석+]를 누르면 분석용 프롬프트가 복사됩니다."); $("ytPlanReport").focus(); return; }
+    if(!topic){ alert("주제를 입력해 주세요."); $("ytPlanTopic").focus(); return; }
+    const sec=Math.max(10, Math.min(180, parseInt($("ytPlanSec").value,10)||50));
+    $("ytPlanSec").value=sec;
+    const text=ytPlanPrompt({report, topic, sec, product:$("ytPlanProduct").value.trim()});
+    $("ytPlanText").textContent=text;
+    $("ytPlanLen").textContent=`${text.length.toLocaleString()}자`;
+    $("ytPlanOut").hidden=false;
+    $("ytPlanOut").scrollIntoView({behavior:"smooth", block:"start"});
+  };
+
+  $("ytPlanCopy").onclick=async()=>{
+    const btn=$("ytPlanCopy"), text=$("ytPlanText").textContent;
+    let ok=true;
+    try{ await navigator.clipboard.writeText(text); }
+    catch(e){
+      try{
+        const ta=document.createElement("textarea");
+        ta.value=text; ta.style.position="fixed"; ta.style.opacity="0";
+        document.body.appendChild(ta); ta.select();
+        ok=document.execCommand("copy"); document.body.removeChild(ta);
+      }catch(e2){ ok=false; }
+    }
+    if(!ok){ ytShowPromptBox(text); }
+    const old=btn.textContent;
+    btn.textContent = ok ? "복사됨" : "직접 복사";
+    btn.classList.toggle("done", ok);
+    setTimeout(()=>{ btn.textContent=old; btn.classList.remove("done"); }, 1600);
+  };
+})();
 document.querySelectorAll("#ytNav button").forEach(b=>b.onclick=()=>ytShowPane(b.dataset.yt));
 document.querySelectorAll("#ytView button").forEach(b=>b.onclick=()=>{
   ytView=b.dataset.view;
