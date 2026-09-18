@@ -411,6 +411,10 @@
         .planbox input:focus,.planbox textarea:focus{outline:0;border-color:var(--brand);box-shadow:0 0 0 3px var(--ring)}
         .planbox .inline{display:flex;align-items:center;gap:8px}
         .planbox .unit{font-size:13.5px;color:var(--muted)}
+        .planbox .chk{display:inline-flex;align-items:center;gap:7px;margin:0;font-weight:500;
+          font-size:13px;color:#4a5160;cursor:pointer;white-space:nowrap}
+        .planbox .chk input{width:16px;height:16px;flex:0 0 16px;margin:0;accent-color:var(--brand)}
+        .planbox input:disabled{background:var(--soft);color:#a8aeb7;cursor:not-allowed}
         .planbox .sub{font-size:12px;color:var(--muted);margin-top:6px}
         .planbox .sub.bad{color:var(--warn)}
         .planout{border-radius:14px;overflow:hidden;background:#12161c}
@@ -662,9 +666,12 @@
 
             <label><span class="n">3</span>영상 길이</label>
             <div class="inline">
-              <input id="ytPlanSec" type="number" min="10" max="180" step="5" value="50" style="width:110px">
+              <label class="chk"><input type="checkbox" id="ytPlanSecRef" checked> 레퍼런스와 같게</label>
+              <input id="ytPlanSec" type="number" min="10" max="180" step="5" value="50" style="width:100px" disabled>
               <span class="unit">초</span>
             </div>
+            <div class="sub">체크를 풀면 직접 지정합니다. 리포트와 30% 넘게 차이 나면 구조가 흔들릴 수 있어,
+              그럴 땐 어느 구간을 덜어냈는지 함께 알려주도록 해두었습니다.</div>
 
             <label><span class="n">4</span>제품 <em class="opt">선택</em></label>
             <input id="ytPlanProduct" type="text" placeholder="비워두면 제품 언급 없이 정보 콘텐츠로 기획됩니다">
@@ -1841,7 +1848,7 @@ ${product || "(없음 — 제품 언급 없이 정보 콘텐츠로 기획해 주
 (리포트의 9-2 온도 단계를 따라 주세요)
 
 [영상 길이]
-${sec}초
+${sec ? `${sec}초` : "(리포트의 레퍼런스 영상과 같은 길이로)"}
 
 [금지 표현]
 건강기능식품·이너뷰티 표시광고 심의 대상입니다.
@@ -1862,6 +1869,14 @@ ${sec}초
   도입부에서 심은 것이 본문에서 회수되어야 합니다.
 - 리포트가 여러 장이면, 공통으로 나타나는 구조를 우선 채택하세요.
 - 확정할 수 없는 것은 "확인 필요"라고 쓰고 임의로 정하지 마세요.
+- 영상 길이가 리포트와 다르면, 비율로 일괄 축소·확대하지 마세요.
+  · 도입부(0~3초)는 길이와 무관하게 그대로 둡니다.
+  · 마무리도 그대로 둡니다.
+  · 늘거나 준 시간은 본문에서만 조정하세요.
+  · 30% 이상 차이가 나면 어느 구간을 덜어내거나 더했는지
+    1번 항목에 밝히고, 구조가 유지되는지 판단해 주세요.
+  · 줄이는데 본문에서 뺄 게 없으면, 억지로 맞추지 말고
+    "이 구조는 ○○초 이하로 줄이면 무너집니다"라고 알려 주세요.
 - 대본과 제목은 숫자를 한글로 쓰세요. TTS가 읽는 원고이기 때문입니다.
   10만 → 십만 / 3개 → 세 개 / 2cm → 이 센티미터 / 30대 → 삼십 대
   100% → 백 퍼센트 / 1~2주 → 일이 주
@@ -2325,13 +2340,20 @@ document.getElementById("ytHistBtn").onclick=()=>ytHistToggle();
   };
   $("ytPlanReport").addEventListener("input", gauge);
 
+  const secRef=$("ytPlanSecRef");
+  const syncSec=()=>{ $("ytPlanSec").disabled = secRef.checked; };
+  secRef.addEventListener("change", syncSec); syncSec();
+
   $("ytPlanApply").onclick=()=>{
     const report=$("ytPlanReport").value.trim();
     const topic=$("ytPlanTopic").value.trim();
     if(!report){ alert("구조 분석 결과를 붙여넣어 주세요.\n\n영상 찾기에서 [분석+]를 누르면 분석용 프롬프트가 복사됩니다."); $("ytPlanReport").focus(); return; }
     if(!topic){ alert("주제를 입력해 주세요."); $("ytPlanTopic").focus(); return; }
-    const sec=Math.max(10, Math.min(180, parseInt($("ytPlanSec").value,10)||50));
-    $("ytPlanSec").value=sec;
+    let sec=null;                              // null이면 레퍼런스 길이를 따른다
+    if(!secRef.checked){
+      sec=Math.max(10, Math.min(180, parseInt($("ytPlanSec").value,10)||50));
+      $("ytPlanSec").value=sec;
+    }
     const text=ytPlanPrompt({report, topic, sec, product:$("ytPlanProduct").value.trim()});
     $("ytPlanText").textContent=text;
     $("ytPlanLen").textContent=`${text.length.toLocaleString()}자`;
