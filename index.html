@@ -1025,14 +1025,14 @@
         <label style="font-size:13px;color:var(--muted)">· 한 번에</label>
         <input type="number" id="cpCap" value="50" min="0" max="1000" style="width:64px">
         <label style="font-size:13px;color:var(--muted)">개까지<span class="qmark" data-tip="이만큼 수집하면 스스로 멈춥니다. 다음 날 '분석 시작'을 다시 누르면 이어서 그다음 몫을 합니다. 하루에 나눠 도는 것이 차단을 피하는 가장 확실한 방법입니다. 0을 넣으면 한도 없이 끝까지 돕니다.">?</span></label>
-        <span style="font-size:12px;color:var(--muted)">쿠팡은 IP 기준으로 막기 때문에 시크릿 모드로도 피할 수 없습니다. 느리게 도는 것이 가장 확실합니다.</span>
+        <span style="font-size:12px;color:var(--muted)">차단은 IP 기준이라 기다리거나 네트워크를 바꿔야 풉니다. <b>시크릿 모드는 쿠키 없는 세션이라 차단을 더 자주 부릅니다</b> — 자꾸 막히면 꺼보세요.</span>
       </div>
       <div class="toolbar">
         <button id="cpRun" style="border:0;background:var(--brand);color:#fff;border-radius:8px;padding:10px 22px;cursor:pointer;font-weight:700">분석 시작</button>
         <button id="cpStop" disabled style="border:1px solid var(--line);background:#fff;border-radius:8px;padding:10px 18px;cursor:pointer">중지</button>
         <button id="cpCsv" style="border:1px solid var(--brand);background:#fff;color:var(--brand);border-radius:8px;padding:10px 16px;cursor:pointer;font-weight:600">CSV 저장</button>
         <button id="cpClear" style="border:1px solid var(--line);background:#fff;border-radius:8px;padding:10px 14px;cursor:pointer">결과 지우기</button>
-        <label style="font-size:13px;margin-left:6px"><input type="checkbox" id="cpIncog" checked> 🕶 시크릿 모드<span class="qmark" data-tip="쿠팡은 내가 눌러본 상품을 위로 올려 보여줍니다. 시크릿 창에서 열면 이력·쿠키가 없는 상태라 중립적인 순위를 볼 수 있습니다. 처음 한 번 chrome://extensions 에서 이 확장의 '시크릿 모드에서 허용'을 켜야 합니다.">?</span></label>
+        <label style="font-size:13px;margin-left:6px"><input type="checkbox" id="cpIncog" checked> 🕶 시크릿 모드<span class="qmark" data-tip="쿠팡은 내가 눌러본 상품을 위로 올려 보여줍니다. 시크릿 창에서 열면 이력·쿠키가 없는 상태라 중립적인 순위를 볼 수 있습니다. 다만 쿠키가 전혀 없는 세션이라 쿠팡이 봇으로 보고 차단하는 일이 잦습니다 — 자꾸 막히면 이 체크를 꺼보세요. 처음 한 번 chrome://extensions 에서 이 확장의 '시크릿 모드에서 허용'을 켜야 합니다.">?</span></label>
         <span class="count" id="cpStatus"></span>
       </div>
       <div id="cpResults" class="placeholder">키워드를 불러오고 <b>분석 시작</b>을 누르세요.</div>
@@ -3043,7 +3043,10 @@ async function cpMeasureRun(){
   if(!IS_ADMIN){ alert("이 기능은 운영자만 사용할 수 있습니다."); return; }
   if(!kw){ document.getElementById("cpOne").focus(); return; }
   const topN=parseInt(document.getElementById("cpTopN").value,10)||20;
-  const incognito=document.getElementById("cpIncog").checked;
+  // 측정은 시크릿을 쓰지 않는다. 쿠키·이력이 전혀 없는 세션은 쿠팡이 봇으로 보고
+  // 바로 거부한다(실측: 켜면 차단, 끄면 통과). 측정은 순위가 아니라 '같은 상품을
+  // 어떻게 묶을까' 를 보는 것이라 개인화된 순위여도 상관없다.
+  const incognito=false;
   btn.disabled=true; const old=btn.textContent; btn.textContent="측정 중…";
   st.textContent=`${kw} — 썸네일을 받아 유사도를 재는 중…`;
   const t0=Date.now();
