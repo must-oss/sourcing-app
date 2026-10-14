@@ -960,6 +960,8 @@
         <label style="font-size:13px;color:var(--muted);font-weight:600">키워드 하나만</label>
         <input type="search" id="cpOne" placeholder="예: 젖산마그네슘  (파일 없이 바로 분석)" style="min-width:240px;flex:1">
         <button id="cpOneRun" style="border:0;background:var(--brand);color:#fff;border-radius:8px;padding:9px 18px;cursor:pointer;font-weight:600">이 키워드 분석</button>
+        <button id="cpMeasure" title="썸네일을 받아 구조·색 유사도를 재고 CSV로 내려받습니다. 그룹핑에는 아직 쓰지 않습니다."
+          style="border:1px solid var(--line);background:#fff;color:#4a5160;border-radius:8px;padding:9px 14px;cursor:pointer;font-weight:600;font-size:13px">🔬 유사도 측정</button>
         <span class="count" id="cpOneStatus"></span>
       </div>
 
@@ -3031,6 +3033,47 @@ async function cpScanOne(){
   btn.disabled=false;
 }
 document.getElementById("cpOneRun").onclick=cpScanOne;
+
+// ── 이미지 유사도 측정 (실험용) ──
+// 그룹핑 기준을 바꾸기 전에, 같은 상품끼리 가깝고 다른 상품과는 먼 '경계'가
+// 실제로 존재하는지 먼저 재본다. 결과는 CSV 로만 내려받고 화면 수치는 건드리지 않는다.
+async function cpMeasureRun(){
+  const kw=(document.getElementById("cpOne").value||"").trim();
+  const btn=document.getElementById("cpMeasure"), st=document.getElementById("cpOneStatus");
+  if(!IS_ADMIN){ alert("이 기능은 운영자만 사용할 수 있습니다."); return; }
+  if(!kw){ document.getElementById("cpOne").focus(); return; }
+  const topN=parseInt(document.getElementById("cpTopN").value,10)||20;
+  const incognito=document.getElementById("cpIncog").checked;
+  btn.disabled=true; const old=btn.textContent; btn.textContent="측정 중…";
+  st.textContent=`${kw} — 썸네일을 받아 유사도를 재는 중…`;
+  const t0=Date.now();
+  try{
+    const d=warnIfStale(await callExt({action:"coupang_measure", keyword:kw, topN, incognito}));
+    if(!d || !d.ok) throw new Error((d&&d.error)||"측정 실패");
+    const sec=((Date.now()-t0)/1000).toFixed(1);
+
+    const esc=v=>`"${String(v==null?"":v).replace(/"/g,'""')}"`;
+    const head=["키워드","i","j","이름i","이름j","같은상품ID","같은이미지파일",
+                "구조거리(0~256)","색거리(0~100)","공통단어수","단어i","단어j","공통단어"];
+    const rows=d.pairs.map(p=>[p.keyword,p.i,p.j,p.nameI,p.nameJ,p.samePid,p.sameFile,
+                               p.structDist,p.colorDist,p.tokShared,p.tokI,p.tokJ,p.sharedTok]);
+    const csv="\uFEFF"+[head,...rows].map(r=>r.map(esc).join(",")).join("\r\n");
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+    a.download=`유사도측정_${kw}_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click(); URL.revokeObjectURL(a.href);
+
+    const ok=d.count-d.failed;
+    st.innerHTML=`측정 완료 — <b>${kw}</b> 상품 ${d.count}개 중 ${ok}개 이미지 처리 · 쌍 ${d.pairs.length}개 · ${sec}초`
+      + (d.failed ? ` · <span style="color:var(--warn)">실패 ${d.failed}개 (${esc2(d.errors.join(" / "))})</span>` : "")
+      + ` · CSV 내려받음`;
+  }catch(e){
+    st.innerHTML=`<span style="color:var(--warn)">측정 실패 — ${esc2(e.message||e)}</span>`;
+  }
+  btn.disabled=false; btn.textContent=old;
+}
+function esc2(t){ const d=document.createElement("div"); d.textContent=String(t); return d.innerHTML; }
+document.getElementById("cpMeasure").onclick=cpMeasureRun;
 document.getElementById("cpOne").addEventListener("keydown",e=>{ if(e.key==="Enter") cpScanOne(); });
 
 document.getElementById("cpRun").onclick=async()=>{
