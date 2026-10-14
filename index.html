@@ -1005,8 +1005,8 @@
         <label style="font-size:13px;color:var(--muted)">상위</label>
         <input type="number" id="cpTopN" value="28" min="5" max="60" style="width:66px">
         <label style="font-size:13px;color:var(--muted)">칸<span class="qmark" data-tip="검색결과 상위 몇 칸을 볼지. 이 안에서 광고를 뺀 나머지가 분석 대상이 됩니다.">?</span> · 간격</label>
-        <input type="number" id="cpDelay" value="9" min="2" max="60" style="width:66px">
-        <label style="font-size:13px;color:var(--muted)">초<span class="qmark" data-tip="실제로는 이 값의 ±40% 범위에서 매번 다르게 쉽니다. 정확히 일정한 간격은 그 자체로 봇 신호라 일부러 흔듭니다.">?</span> ·</label>
+        <input type="number" id="cpDelay" value="15" min="2" max="60" style="width:66px">
+        <label style="font-size:13px;color:var(--muted)">초<span class="qmark" data-tip="실제로는 이 값의 ±50% 범위에서 매번 다르게 쉽니다. 정확히 일정한 간격은 그 자체로 봇 신호라 일부러 흔듭니다. 차단이 잦으면 이 값을 더 올리세요.">?</span> ·</label>
         <input type="number" id="cpBatch" value="30" min="0" max="500" style="width:66px">
         <label style="font-size:13px;color:var(--muted)">개마다</label>
         <input type="number" id="cpRest" value="5" min="0" max="60" style="width:60px">
@@ -3143,7 +3143,7 @@ document.getElementById("cpRun").onclick=async()=>{
   const staleDays=parseInt(document.getElementById("cpStale").value,10)||0;
   const incognito=document.getElementById("cpIncog").checked;
   // 정확히 일정한 간격은 그 자체로 봇 신호 → 매번 ±40% 흔든다
-  const jitter=()=>Math.round(baseDelay*(0.6+Math.random()*0.8));
+  const jitter=()=>Math.round(baseDelay*(0.5+Math.random()));   // ±50%
   // 이미 있는 결과를 건너뛸지 판단 (오류는 재시도, 오래된 것도 재수집)
   const isFresh=(kw)=>{
     const r=cpResults[kw];
