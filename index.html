@@ -3054,9 +3054,9 @@ async function cpMeasureRun(){
 
     const esc=v=>`"${String(v==null?"":v).replace(/"/g,'""')}"`;
     const head=["키워드","i","j","이름i","이름j","같은상품ID","같은이미지파일",
-                "구조거리(0~256)","색거리(0~100)","공통단어수","단어i","단어j","공통단어"];
+                "구조거리(0~256)","색거리(0~100)","색상거리(0~100)","공통단어수","단어i","단어j","공통단어"];
     const rows=d.pairs.map(p=>[p.keyword,p.i,p.j,p.nameI,p.nameJ,p.samePid,p.sameFile,
-                               p.structDist,p.colorDist,p.tokShared,p.tokI,p.tokJ,p.sharedTok]);
+                               p.structDist,p.colorDist,p.hueDist,p.tokShared,p.tokI,p.tokJ,p.sharedTok]);
     const csv="\uFEFF"+[head,...rows].map(r=>r.map(esc).join(",")).join("\r\n");
     const a=document.createElement("a");
     a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
