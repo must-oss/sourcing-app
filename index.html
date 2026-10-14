@@ -2748,17 +2748,67 @@ function cpSave(){
   try{ localStorage.setItem(CP_KEY, JSON.stringify({savedAt:new Date().toISOString(), results:cpResults})); }catch(e){}
 }
 
-function groupProducts(items){
+// 상품명에서 비교에 쓸 단어만 남긴다 (수식어·수량·용량 제거)
+const NAME_STOP = new Set(("정품 본사정품 본사 공식 공식판매 인증 최신 리뉴얼 신제품 베스트 정식 수입 직구 " +
+  "무료배송 무료 당일발송 빠른배송 증정 사은품 특가 할인 세트 선물 추천 인기 국내산 대용량 묶음 박스 " +
+  "쿠팡 로켓배송 당일").split(" "));
+function nameTokens(name){
+  const head = String(name||"").split(",")[0];
+  const out = [];
+  for(let t of head.replace(/[\[\]()·\-_/+|]/g," ").split(/\s+/)){
+    t = t.trim().toLowerCase();
+    if(t.length < 2) continue;
+    // 순수한 수량·용량만 버린다. '99바이탈' 같은 브랜드는 숫자로 시작해도 남긴다.
+    if(/^[\d.,]+(g|kg|mg|ml|l|t|정|포|개|입|매|박스|세트|회분|캡슐|p|ea|%)?$/i.test(t)) continue;
+    if(NAME_STOP.has(t)) continue;
+    if(!out.includes(t)) out.push(t);
+  }
+  return out;
+}
+
+// 상위 칸을 차지한 '실제 상품' 수를 센다.
+//
+// 상품ID·이미지파일이 같으면 확실히 같은 상품이다. 문제는 리셀러들이 같은 물건을
+// 각자 등록하는 경우 — ID도 이미지도 이름도 전부 달라 따로 세어진다.
+// 실측(우로비콘)에서 22개가 전부 같은 제품인데 9개로 세고 있었다.
+//
+// 그래서 상품명을 단어로 쪼개 비교하되, 두 가지를 먼저 걷어낸다.
+//   · 검색어 자체 — '우로비콘' 은 전부 갖고 있어 변별력이 없다
+//   · 그 키워드에서 30% 이상이 쓰는 단어 — '퓨렉신' · '홍삼정' 같은 카테고리어
+// 남은 '변별 단어' 가 절반 이상 겹치면 같은 상품으로 본다.
+// 양쪽 다 변별 단어가 없으면(= 검색어와 흔한 말뿐) 역시 같은 상품이다.
+//
+// 키워드 5개 실측 — 고유율 변화:
+//   요습관 37→16% · 우로비콘 41→23% · 크레아틴 79→58% · 블랙커민 68→63% · 정관장 74→68%
+const GROUP_DF_CUT = 0.3;   // 이 비율 이상이 쓰는 단어는 변별력 없음
+const GROUP_OVERLAP = 0.5;  // 변별 단어가 이만큼 겹치면 같은 상품
+
+function groupProducts(items, keyword){
   const n = items.length;
   const parent = Array.from({length:n}, (_,i)=>i);
   const find = a => { while(parent[a]!==a){ parent[a]=parent[parent[a]]; a=parent[a]; } return a; };
   const uni  = (a,b)=>{ a=find(a); b=find(b); if(a!==b) parent[b]=a; };
-  const byPid={}, byImg={}, byName={};
+  const byPid={}, byImg={};
   items.forEach((it,i)=>{
     if(it.pid){ if(byPid[it.pid]!==undefined) uni(byPid[it.pid], i); else byPid[it.pid]=i; }
     if(it.img){ if(byImg[it.img]!==undefined) uni(byImg[it.img], i); else byImg[it.img]=i; }
-    if(it.nk && it.nk.length>=4){ if(byName[it.nk]!==undefined) uni(byName[it.nk], i); else byName[it.nk]=i; }
   });
+
+  // ── 변별 단어 추리기 ──
+  const kw = String(keyword||"").toLowerCase().replace(/\s+/g,"");
+  const toks = items.map(it => nameTokens(it.name));
+  const df = {};
+  toks.forEach(ts => new Set(ts).forEach(t => df[t] = (df[t]||0) + 1));
+  const disc = toks.map(ts => new Set(ts.filter(t =>
+    !(kw && (kw.includes(t) || t.includes(kw))) && df[t] < n * GROUP_DF_CUT )));
+
+  for(let i=0;i<n;i++) for(let j=i+1;j<n;j++){
+    const A=disc[i], B=disc[j];
+    if(!A.size && !B.size){ uni(i,j); continue; }        // 둘 다 검색어·흔한말뿐
+    if(!A.size || !B.size) continue;
+    let inter=0; A.forEach(t=>{ if(B.has(t)) inter++; });
+    if(inter / (A.size + B.size - inter) >= GROUP_OVERLAP) uni(i,j);
+  }
   const size={};
   for(let i=0;i<n;i++){ const r=find(i); size[r]=(size[r]||0)+1; }
   const groups=Object.values(size).sort((a,b)=>b-a);
@@ -3021,7 +3071,7 @@ async function cpScanOne(){
   const at=new Date().toISOString();
   if(d && d.ok){
     cpResults[kw]=Object.assign({kw, search:null, comp:null, src:"직접 입력", at,
-      totalCards:d.totalCards, slots:d.slots, ads:d.ads}, groupProducts(d.items||[]));
+      totalCards:d.totalCards, slots:d.slots, ads:d.ads}, groupProducts(d.items||[], kw));
     const r=cpResults[kw];
     st.textContent=`완료 — 분석대상 ${r.collected}개 중 실제 상품 ${r.unique}개 (고유율 ${Math.round(cpRatio(r)*100)}%)`;
   }else{
@@ -3148,7 +3198,7 @@ document.getElementById("cpRun").onclick=async()=>{
 
     if(d && d.ok){
       cpResults[k.kw]=Object.assign({kw:k.kw, search:k.search, comp:k.comp, src:k.src, at,
-        totalCards:d.totalCards, slots:d.slots, ads:d.ads}, groupProducts(d.items||[]));
+        totalCards:d.totalCards, slots:d.slots, ads:d.ads}, groupProducts(d.items||[], k.kw));
     }else{
       cpResults[k.kw]={kw:k.kw, search:k.search, comp:k.comp, src:k.src, at, error:(d&&d.error)||"실패"};
     }
