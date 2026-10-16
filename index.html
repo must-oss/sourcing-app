@@ -2748,6 +2748,38 @@ function cpSave(){
   try{ localStorage.setItem(CP_KEY, JSON.stringify({savedAt:new Date().toISOString(), results:cpResults})); }catch(e){}
 }
 
+// ── 설정값 기억 ──
+// 탭을 옮기거나 새로고침할 때마다 기본값으로 돌아가 매번 다시 입력해야 했다.
+// 필터 조건(검색수·경쟁강도 등)과 수집 설정(간격·휴식 등)을 브라우저에 남긴다.
+const CP_OPT_KEY = "coupang_opts_v1";
+const CP_OPT_IDS = ["cpMinSearch","cpMaxComp","cpMaxProd","cpMinShop","cpShopOnly","cpCat",
+                    "cpTopN","cpDelay","cpBatch","cpRest","cpResume","cpStale",
+                    "cpCool","cpCoolMax","cpCap","cpIncog"];
+function cpSaveOpts(){
+  const o = {};
+  CP_OPT_IDS.forEach(id=>{
+    const el = document.getElementById(id); if(!el) return;
+    o[id] = (el.type === "checkbox") ? el.checked : el.value;
+  });
+  try{ localStorage.setItem(CP_OPT_KEY, JSON.stringify(o)); }catch(e){}
+}
+function cpLoadOpts(){
+  let o = null;
+  try{ o = JSON.parse(localStorage.getItem(CP_OPT_KEY) || "null"); }catch(e){}
+  if(o){
+    CP_OPT_IDS.forEach(id=>{
+      const el = document.getElementById(id);
+      if(!el || o[id] === undefined) return;
+      if(el.type === "checkbox") el.checked = !!o[id]; else el.value = o[id];
+    });
+  }
+  // 값이 바뀔 때마다 저장 — 분석을 돌리지 않아도 남는다
+  CP_OPT_IDS.forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.addEventListener(el.type === "checkbox" ? "change" : "input", cpSaveOpts);
+  });
+}
+
 // 상품명에서 비교에 쓸 단어만 남긴다 (수식어·수량·용량 제거)
 const NAME_STOP = new Set(("정품 본사정품 본사 공식 공식판매 인증 최신 리뉴얼 신제품 베스트 정식 수입 직구 " +
   "무료배송 무료 당일발송 빠른배송 증정 사은품 특가 할인 세트 선물 추천 인기 국내산 대용량 묶음 박스 " +
@@ -3248,7 +3280,7 @@ document.getElementById("cpCsv").onclick=()=>{
   a.click(); URL.revokeObjectURL(a.href);
 };
 
-cpLoadSaved(); cpRender();
+cpLoadSaved(); cpLoadOpts(); cpRender();
 
 // ---------- 이미지 생성 (OpenAI · 회원 각자 키) ----------
 const OA_KEY = "oa_api_key";
