@@ -232,6 +232,8 @@
   </header>
   <nav class="tabs">
     <button class="active" data-tab="hsmoa"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg>홈쇼핑 키워드</button>
+    <!-- 공개하려면: 아래 hidden 을 지우고 ADMIN_TABS 에서 "keyword" 를 빼면 된다 -->
+    <button data-tab="keyword" id="tabKeyword" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-6 4 4 4-7 5 5"/><circle cx="8" cy="11" r="1.4"/><circle cx="12" cy="15" r="1.4"/><circle cx="16" cy="8" r="1.4"/></svg>키워드 발굴</button>
     <button data-tab="sourcing"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8v8l-9 5-9-5V8l9-5 9 5Z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>도매몰 소싱</button>
     <button data-tab="image" id="tabImage" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>이미지 생성</button>
     <button data-tab="youtube" id="tabYoutube" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="4"/><path d="m10 9 5 3-5 3V9Z"/></svg>유튜브 리서치</button>
@@ -303,6 +305,46 @@
         </div>
         <div id="anBody"></div>
       </div>
+    </section>
+
+    <!-- 탭: 키워드 발굴 — 아이템스카우트 순위 상승 + 13개월 검색 추이 -->
+    <section id="tab-keyword" hidden>
+      <div class="meta" id="kdMeta"></div>
+      <div class="hint">💡 순위가 오르는 키워드를 <b>단계별</b>로 가립니다.
+        <b>🌱 신호 포착</b>이 가장 이른 단계 — 1주 순위가 크게 뛰었지만 월별 추이는 아직 못 따라온 구간입니다.
+        키워드를 클릭하면 월별 수치와 홈쇼핑 편성이 펼쳐집니다.</div>
+
+      <div class="toolbar">
+        <input type="search" id="kdQ" placeholder="키워드 검색…" style="min-width:180px">
+        <select id="kdCat"><option value="">전체 카테고리</option>
+          <option>건강식품</option><option>다이어트식품</option></select>
+        <select id="kdSearch">
+          <option value="0">검색량 전체</option>
+          <option value="3000" selected>3,000 이상</option>
+          <option value="10000">10,000 이상</option>
+          <option value="30000">30,000 이상</option>
+        </select>
+        <select id="kdComp">
+          <option value="99">경쟁 전체</option>
+          <option value="0.5" selected>0.5 이하</option>
+          <option value="0.2">0.2 이하</option>
+          <option value="0.05">0.05 이하</option>
+        </select>
+        <select id="kdW1" title="1주 순위가 이만큼 뛰면 '신호 포착'으로 본다">
+          <option value="20">1주 +20계단↑</option>
+          <option value="40" selected>1주 +40계단↑</option>
+          <option value="80">1주 +80계단↑</option>
+        </select>
+        <select id="kdMult" title="최근 3개월 ÷ 직전 3개월">
+          <option value="1.2">배수 1.2↑</option>
+          <option value="1.3" selected>배수 1.3↑</option>
+          <option value="1.5">배수 1.5↑</option>
+        </select>
+        <span class="count" id="kdCount" style="margin-left:auto"></span>
+      </div>
+
+      <div class="toolbar" id="kdStages" style="gap:6px;flex-wrap:wrap"></div>
+      <div id="kdBody"></div>
     </section>
 
     <!-- 탭2: 도매몰 소싱 -->
@@ -1431,6 +1473,209 @@ function renderAnalysis(){
         ※ 2026-08-25~08-30 주는 수집이 없어 그 주 편성은 0으로 잡힙니다.</div>`;
 }
 
+// ═══════════ 키워드 발굴 ═══════════
+// 아이템스카우트 순위 상승(매주 자동) + 13개월 월별 실검색수(차트 수집) 를 단계로 가른다.
+const KD_STAGES = [
+  { k:"signal", icon:"🌱", name:"신호 포착", desc:"1주 순위가 크게 뛰었다. 월별 추이는 아직 못 따라온다 — 가장 이른 단계" },
+  { k:"rising", icon:"🔥", name:"상승 확인", desc:"최근 3개월 평균이 직전보다 크게 늘었고 아직 꺾이지 않았다" },
+  { k:"slow",   icon:"📈", name:"완만 상승", desc:"올라오는 중이지만 속도가 완만하다" },
+  { k:"peak",   icon:"⚠️", name:"고점·꺾임", desc:"배수는 높지만 최근 달이 두 달 전보다 낮다" },
+  { k:"flat",   icon:"➖", name:"정체·하락", desc:"" },
+  { k:"nodata", icon:"❓", name:"추이 미수집", desc:"월별 차트를 아직 못 받았다. 순위 신호만 있다" },
+];
+const KD_ORDER = Object.fromEntries(KD_STAGES.map((s,i)=>[s.k,i]));
+let KD_OFF = new Set(["flat"]);        // 기본으로 접어두는 단계
+
+function kdAvg(a){ return a.reduce((x,y)=>x+y,0)/a.length; }
+
+// 단계 판정 — 저장된 값을 쓰지 않고 매번 계산한다. 그래야 기준을 화면에서 바꿀 수 있다.
+function kdStage(act, up1w, w1thr, multThr){
+  // 배수는 단계와 상관없이 추이가 있으면 늘 계산한다. 신호 포착으로 분류된
+  // 키워드도 추이를 같이 봐야 '월별이 아직 못 따라왔다'가 눈에 보인다.
+  let mult = null;
+  if (act && act.length >= 13){
+    const last3 = kdAvg(act.slice(-3)), prev3 = kdAvg(act.slice(-6,-3));
+    mult = prev3 > 0 ? last3/prev3 : (last3 > 0 ? 99 : 0);
+  }
+  if ((up1w||0) >= w1thr) return { k:"signal", mult };
+  if (mult === null)      return { k:"nodata", mult };
+  const lastM = act[12], twoAgo = act[10];
+  if (mult >= multThr && lastM >= twoAgo) return { k:"rising", mult };
+  if (mult >= 1.1     && lastM >= twoAgo) return { k:"slow",   mult };
+  if (mult >= 1.2)                        return { k:"peak",   mult };
+  return { k:"flat", mult };
+}
+
+// 월 라벨 — months 에 날짜가 없으므로 수집 시점에서 거꾸로 센다.
+// 수집일이 2026-11-11 이면 실측 마지막은 26.10, 예측은 26.11 이다.
+function kdMonths(updatedAt){
+  const t = updatedAt ? new Date(updatedAt) : new Date();
+  const out = [];
+  for (let i = 13; i >= 1; i--){
+    const d = new Date(t.getFullYear(), t.getMonth() - i, 1);
+    out.push(String(d.getFullYear()).slice(2) + "." + String(d.getMonth()+1).padStart(2,"0"));
+  }
+  const p = new Date(t.getFullYear(), t.getMonth(), 1);
+  return { act: out, pred: String(p.getFullYear()).slice(2) + "." + String(p.getMonth()+1).padStart(2,"0") };
+}
+
+// 몇 주 연속 상승 명단에 있었나 — keyword_search_log 의 up1w 로 센다.
+// (매주 fetch_itemscout 가 947종을 넣는다. 그 전 주차는 up1w 가 비어 있어 건너뛴다)
+function kdWeeksUp(){
+  const by = {};
+  (DATA.searchLog || []).forEach(r => {
+    if (r.up1w === null || r.up1w === undefined) return;
+    (by[r.keyword] = by[r.keyword] || []).push(r);
+  });
+  const out = {};
+  for (const [kw, list] of Object.entries(by)){
+    list.sort((a,b)=> a.week < b.week ? -1 : 1);
+    let n = 0;
+    for (let i = list.length - 1; i >= 0; i--){ if (list[i].up1w > 0) n++; else break; }
+    out[kw] = { streak:n, weeks:list.length };
+  }
+  return out;
+}
+
+// 13개월 꺾은선
+function kdLine(act){
+  const W = 118, H = 26, max = Math.max(1, ...act), n = act.length;
+  const pts = act.map((v,i)=> `${(i/(n-1)*(W-2)+1).toFixed(1)},${(H-1 - (v/max)*(H-3)).toFixed(1)}`).join(" ");
+  const last = act[n-1], up = last >= act[n-2];
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="vertical-align:middle">
+    <polyline points="${pts}" fill="none" stroke="${up?'var(--brand)':'#c2410c'}" stroke-width="1.6"
+      stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${(W-1).toFixed(1)}" cy="${(H-1-(last/max)*(H-3)).toFixed(1)}" r="2"
+      fill="${up?'var(--brand)':'#c2410c'}"/></svg>`;
+}
+
+function kdBuild(){
+  const w1thr = +document.getElementById("kdW1").value;
+  const multThr = +document.getElementById("kdMult").value;
+  const streaks = kdWeeksUp();
+
+  // 홈쇼핑 편성 — 최근 8주만 센다. 전 기간을 세면 오래된 방송까지 섞여 무뎌진다.
+  const since = anAddWeeks(anWeek(new Date().toISOString().slice(0,10)), -8);
+  const bc = {};
+  for (const k of (DATA.keywords || [])){
+    const recent = k.broadcasts.filter(b => b.date && anWeek(b.date) >= since);
+    if (recent.length) bc[k.keyword] = recent;
+  }
+
+  return Object.values(DATA.signals || {}).map(s => {
+    const act = s.months ? s.months.split(",").map(Number) : null;
+    const st = kdStage(act, s.up1w, w1thr, multThr);
+    const lab = kdMonths(s.updated_at);
+    // 예측이 실측 마지막의 5배를 넘으면 모델이 기울기를 그대로 늘린 것 — 믿기 어렵다
+    const lastM = act ? act[12] : 0;
+    const wild = s.pred && lastM > 0 && s.pred / lastM > 5;
+    return { ...s, act, stage: st.k, mult: st.mult, lab, wild,
+             streak: (streaks[s.keyword] || {}).streak || 0,
+             bcast: bc[s.keyword] || [] };
+  });
+}
+
+function kdRenderStages(counts){
+  document.getElementById("kdStages").innerHTML = KD_STAGES.map(s => {
+    const on = !KD_OFF.has(s.k), n = counts[s.k] || 0;
+    return `<button class="kdchip" data-stage="${s.k}" title="${esc(s.desc)}"
+      style="border:1px solid ${on?'var(--brand)':'var(--line)'};background:${on?'var(--band)':'#fff'};
+      color:${on?'var(--brand)':'var(--muted)'};border-radius:999px;padding:4px 12px;font-size:13px;
+      font-weight:${on?600:400};cursor:pointer">${s.icon} ${s.name} ${n}</button>`;
+  }).join("");
+  document.querySelectorAll(".kdchip").forEach(b => b.onclick = () => {
+    const k = b.dataset.stage;
+    if (KD_OFF.has(k)) KD_OFF.delete(k); else KD_OFF.add(k);
+    renderKeyword();
+  });
+}
+
+function renderKeyword(){
+  const el = document.getElementById("kdBody");
+  if (!DATA.signals || !Object.keys(DATA.signals).length){
+    document.getElementById("kdMeta").textContent = "";
+    el.innerHTML = `<div class="hint" style="border-color:var(--warn)">
+      ⚠️ 키워드 신호 데이터가 없습니다. <b>migration_keyword_tab.sql</b> 실행 후
+      <b>backfill_history.py</b> 와 <b>fetch_charts.py</b> 를 돌리세요.</div>`;
+    return;
+  }
+  const all = kdBuild();
+  const counts = {}; all.forEach(r => counts[r.stage] = (counts[r.stage]||0)+1);
+  kdRenderStages(counts);
+
+  const q = document.getElementById("kdQ").value.trim().toLowerCase();
+  const cat = document.getElementById("kdCat").value;
+  const minS = +document.getElementById("kdSearch").value;
+  const maxC = +document.getElementById("kdComp").value;
+
+  const rows = all.filter(r =>
+      !KD_OFF.has(r.stage)
+      && (!q || r.keyword.toLowerCase().includes(q))
+      && (!cat || r.cat === cat)
+      && (r.search || 0) >= minS
+      && (r.comp === null || r.comp === undefined || parseFloat(r.comp) <= maxC))
+    .sort((a,b) => (KD_ORDER[a.stage]-KD_ORDER[b.stage])
+                || (b.up1w||0)-(a.up1w||0) || (b.mult||0)-(a.mult||0));
+
+  const withTrend = all.filter(r => r.act).length;
+  document.getElementById("kdMeta").innerHTML =
+    `키워드 <b>${all.length}</b>종 · 월별 추이 ${withTrend}종 `
+    + `<span style="color:var(--muted)">(나머지는 차트 수집 대기)</span>`;
+  document.getElementById("kdCount").textContent = `${rows.length}개`;
+
+  const GRID = "22px minmax(130px,1.5fr) 58px 48px 48px 48px 48px 56px 78px 54px 52px 92px 128px 74px";
+  const head = ["", "키워드", "1주↑", "1개월", "6개월", "1년", "연속", "검색량", "경쟁", "배수",
+                "이달예측", "", "13개월 추이", "홈쇼핑"];
+  const num = v => Number(v||0).toLocaleString();
+  const up = v => (v||0) > 0 ? `<span style="color:var(--brand);font-weight:600">+${v}</span>`
+                             : `<span style="color:var(--muted)">·</span>`;
+
+  const body = rows.map(r => {
+    const S = KD_STAGES[KD_ORDER[r.stage]];
+    const months = r.act ? r.act.map((v,i)=>
+        `<tr><td class="c">${r.lab.act[i]}</td><td class="c">${num(v)}</td></tr>`).join("") : "";
+    const predRow = r.pred ? `<tr><td class="c" style="color:var(--muted)">${r.lab.pred} 예측</td>
+        <td class="c" style="color:${r.wild?'var(--muted)':'var(--ink)'}">${num(r.pred)}${r.wild?" ⚠️":""}</td></tr>` : "";
+    const bl = r.bcast.map(b=>`<tr><td class="c">${esc(b.date)}</td><td class="c">${esc(b.time)}</td>`
+      +`<td class="c">${chanCell(b.channel)}</td><td>${esc(b.product)}</td></tr>`).join("");
+
+    return `<details class="kw"><summary style="display:grid;grid-template-columns:${GRID};gap:6px;
+        align-items:center;padding:7px 8px;cursor:pointer;border-bottom:1px solid var(--line);font-size:13px">
+      <div title="${esc(S.name)}">${S.icon}</div>
+      <div><span class="caret">▸</span><b>${esc(r.keyword)}</b></div>
+      <div class="num">${up(r.up1w)}</div><div class="num">${up(r.up1m)}</div>
+      <div class="num">${up(r.up6m)}</div><div class="num">${up(r.up1y)}</div>
+      <div class="num">${r.streak>=2?`<span style="color:var(--brand);font-weight:700">${r.streak}주</span>`
+                                    :`<span style="color:var(--muted)">${r.streak||"·"}</span>`}</div>
+      <div class="num">${num(r.search)}</div>
+      <div class="num" style="color:var(--muted)">${esc(r.comp??"-")}</div>
+      <div class="num" style="font-weight:600;color:${(r.mult||0)>=1.3?'var(--brand)':'inherit'}">
+        ${r.mult===null||r.mult===undefined?"—":(r.mult>=99?"신규":r.mult.toFixed(2))}</div>
+      <div class="num" style="color:${r.wild?'var(--muted)':'inherit'}">
+        ${r.pred?num(r.pred)+(r.wild?" ⚠️":""):"—"}</div>
+      <div></div>
+      <div>${r.act?kdLine(r.act):`<span style="color:var(--muted);font-size:12px">미수집</span>`}</div>
+      <div class="num">${r.bcast.length?`<span style="color:var(--brand);font-weight:700">${r.bcast.length}회</span>`
+                                       :`<span style="color:var(--muted)">·</span>`}</div>
+    </summary>
+    <div class="body" style="display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start">
+      ${r.act?`<div><div style="font-weight:600;margin-bottom:4px">월별 검색수</div>
+        <table style="font-size:12px"><tbody>${months}${predRow}</tbody></table></div>`:""}
+      <div style="flex:1;min-width:300px">
+        <div style="font-weight:600;margin-bottom:4px">홈쇼핑 편성 (최근 8주) ${r.bcast.length}건</div>
+        ${r.bcast.length?`<div class="tablewrap"><table><thead><tr><th class="c">날짜</th><th class="c">시간</th>
+          <th class="c">채널</th><th>제품명</th></tr></thead><tbody>${bl}</tbody></table></div>`
+          :`<div class="empty">편성 없음</div>`}
+      </div>
+    </div></details>`;
+  }).join("");
+
+  el.innerHTML = `<div style="display:grid;grid-template-columns:${GRID};gap:6px;padding:6px 8px;
+      background:var(--soft);border-radius:8px;font-size:12px;color:var(--muted);font-weight:600">
+      ${head.map((h,i)=>`<div${i>=2&&i<=10?' class="num"':''}>${h}</div>`).join("")}</div>`
+    + (body || `<div class="empty">조건에 맞는 키워드가 없습니다.</div>`);
+}
+
 // ---------- 뷰 전환 ----------
 function showView(v){
   document.getElementById("scheduleView").classList.toggle("hidden", v!=="schedule");
@@ -1450,6 +1695,7 @@ async function startApp(userLabel, isAdmin){
   document.getElementById("tabAdmin").hidden = !isAdmin;     // 관리자만 관리자 탭
   document.getElementById("tabCoupang").hidden = !isAdmin;   // 쿠팡 분석도 관리자 전용
   document.getElementById("tabYoutube").hidden = !isAdmin;   // 유튜브 리서치 — 공개 전까지 비공개
+  document.getElementById("tabKeyword").hidden = !isAdmin;   // 키워드 발굴 — 공개하려면 이 줄을 지운다
   document.querySelectorAll(".ytguide").forEach(d=>d.hidden = !isAdmin);  // 가이드의 유튜브 항목도 같이
   IS_ADMIN = !!isAdmin;
   DATA = await loadData();
@@ -1464,17 +1710,21 @@ if(SHOW_IMAGE_TAB) document.getElementById("tabImage").hidden = false;
 
 // 탭 전환
 // 관리자 전용 탭 — 버튼을 숨기는 것만으로는 부족해서 전환 자체를 막는다
-const ADMIN_TABS = ["coupang","admin","youtube"];   // 유튜브 리서치는 아직 비공개
+// 키워드 발굴을 전체 공개하려면 세 군데만 손대면 된다:
+//   ① 아래 배열에서 "keyword" 제거  ② 탭 버튼 #tabKeyword 의 hidden 속성 제거
+//   ③ startApp() 의 tabKeyword.hidden 지정 한 줄 삭제
+const ADMIN_TABS = ["coupang","admin","youtube","keyword"];   // 유튜브·키워드 발굴은 아직 비공개
 let IS_ADMIN = false;
 
 function showTab(name){
   if(ADMIN_TABS.includes(name) && !IS_ADMIN){ name = "hsmoa"; }
-  ["hsmoa","sourcing","image","youtube","guide","coupang","admin"].forEach(t=>{
+  ["hsmoa","keyword","sourcing","image","youtube","guide","coupang","admin"].forEach(t=>{
     const s=document.getElementById("tab-"+t); if(s) s.hidden = (t!==name);
   });
   document.querySelectorAll("nav.tabs button[data-tab]").forEach(x=>
     x.classList.toggle("active", x.dataset.tab===name));
   if(name==="admin") loadMembers();
+  if(name==="keyword") renderKeyword();
   if(name==="youtube") ytHistLoad();      // 탭에 들어올 때 내역 칩을 채워둔다
 }
 
@@ -1524,6 +1774,10 @@ document.getElementById("viewSchedule").onclick=()=>showView("schedule");
 document.getElementById("viewKeyword").onclick=()=>showView("keyword");
 document.getElementById("viewAnalysis").onclick=()=>showView("analysis");
 document.getElementById("anThresh").addEventListener("change",renderAnalysis);
+// 키워드 발굴 필터
+document.getElementById("kdQ").addEventListener("input",renderKeyword);
+["kdCat","kdSearch","kdComp","kdW1","kdMult"].forEach(id=>
+  document.getElementById(id).addEventListener("change",renderKeyword));
 ["qProduct","fChannel","fDate"].forEach(id=>document.getElementById(id).addEventListener("input",renderSchedule));
 document.getElementById("qKeyword").addEventListener("input",renderKeywords);
 document.querySelectorAll(".kwhead .sortable").forEach(h=>h.onclick=()=>setSort(h.dataset.sort));
