@@ -1486,6 +1486,44 @@ const KD_STAGES = [
 const KD_ORDER = Object.fromEntries(KD_STAGES.map((s,i)=>[s.k,i]));
 let KD_OFF = new Set(["flat"]);        // 기본으로 접어두는 단계
 
+// 표 컬럼 — f 가 있으면 눌러서 정렬할 수 있다. w 는 그리드 폭.
+const KD_COLS = [
+  { f:"stage",  t:"단계",    w:"46px",             a:"asc"  },
+  {             t:"키워드",  w:"minmax(130px,1.5fr)"        },
+  { f:"up1w",   t:"1주",     w:"54px",  n:1, a:"desc" },
+  { f:"up1m",   t:"1개월",   w:"54px",  n:1, a:"desc" },
+  { f:"up6m",   t:"6개월",   w:"54px",  n:1, a:"desc" },
+  { f:"up1y",   t:"1년",     w:"50px",  n:1, a:"desc" },
+  { f:"streak", t:"연속",    w:"50px",  n:1, a:"desc" },
+  { f:"search", t:"검색량",  w:"76px",  n:1, a:"desc" },
+  { f:"comp",   t:"경쟁",    w:"56px",  n:1, a:"asc"  },   // 경쟁은 낮은 순부터
+  { f:"mult",   t:"배수",    w:"54px",  n:1, a:"desc" },
+  { f:"pred",   t:"이달예측", w:"82px", n:1, a:"desc" },
+  {             t:"13개월 추이", w:"136px"                 },
+  { f:"bcast",  t:"홈쇼핑",  w:"68px",  n:1, a:"desc" },
+];
+const KD_GRID = KD_COLS.map(c=>c.w).join(" ");
+let KD_SORT = { field:"stage", dir:"asc" };
+
+function kdVal(r, f){
+  switch(f){
+    case "stage":  return KD_ORDER[r.stage];
+    case "comp":   { const c = parseFloat(r.comp); return isNaN(c) ? 999 : c; }
+    case "mult":   return (r.mult === null || r.mult === undefined) ? -1 : r.mult;
+    case "pred":   return r.pred || -1;
+    case "streak": return r.streak || 0;
+    case "bcast":  return r.bcast.length;
+    case "search": return r.search || 0;
+    default:       return r[f] || 0;        // up1w / up1m / up6m / up1y
+  }
+}
+function kdSetSort(f){
+  const col = KD_COLS.find(c=>c.f===f);
+  if (KD_SORT.field === f) KD_SORT.dir = KD_SORT.dir === "asc" ? "desc" : "asc";
+  else KD_SORT = { field:f, dir: col.a };
+  renderKeyword();
+}
+
 function kdAvg(a){ return a.reduce((x,y)=>x+y,0)/a.length; }
 
 // 단계 판정 — 저장된 값을 쓰지 않고 매번 계산한다. 그래야 기준을 화면에서 바꿀 수 있다.
@@ -1614,8 +1652,12 @@ function renderKeyword(){
       && (!cat || r.cat === cat)
       && (r.search || 0) >= minS
       && (r.comp === null || r.comp === undefined || parseFloat(r.comp) <= maxC))
-    .sort((a,b) => (KD_ORDER[a.stage]-KD_ORDER[b.stage])
-                || (b.up1w||0)-(a.up1w||0) || (b.mult||0)-(a.mult||0));
+    .sort((a,b) => {
+      const d = (kdVal(a,KD_SORT.field) - kdVal(b,KD_SORT.field)) * (KD_SORT.dir==="asc"?1:-1);
+      if (d) return d;
+      // 동률이면 늘 같은 순서로 — 단계 → 1주 상승
+      return (KD_ORDER[a.stage]-KD_ORDER[b.stage]) || (b.up1w||0)-(a.up1w||0);
+    });
 
   const withTrend = all.filter(r => r.act).length;
   document.getElementById("kdMeta").innerHTML =
@@ -1623,9 +1665,7 @@ function renderKeyword(){
     + `<span style="color:var(--muted)">(나머지는 차트 수집 대기)</span>`;
   document.getElementById("kdCount").textContent = `${rows.length}개`;
 
-  const GRID = "22px minmax(130px,1.5fr) 58px 48px 48px 48px 48px 56px 78px 54px 52px 92px 128px 74px";
-  const head = ["", "키워드", "1주↑", "1개월", "6개월", "1년", "연속", "검색량", "경쟁", "배수",
-                "이달예측", "", "13개월 추이", "홈쇼핑"];
+  const GRID = KD_GRID;
   const num = v => Number(v||0).toLocaleString();
   const up = v => (v||0) > 0 ? `<span style="color:var(--brand);font-weight:600">+${v}</span>`
                              : `<span style="color:var(--muted)">·</span>`;
@@ -1653,7 +1693,6 @@ function renderKeyword(){
         ${r.mult===null||r.mult===undefined?"—":(r.mult>=99?"신규":r.mult.toFixed(2))}</div>
       <div class="num" style="color:${r.wild?'var(--muted)':'inherit'}">
         ${r.pred?num(r.pred)+(r.wild?" ⚠️":""):"—"}</div>
-      <div></div>
       <div>${r.act?kdLine(r.act):`<span style="color:var(--muted);font-size:12px">미수집</span>`}</div>
       <div class="num">${r.bcast.length?`<span style="color:var(--brand);font-weight:700">${r.bcast.length}회</span>`
                                        :`<span style="color:var(--muted)">·</span>`}</div>
@@ -1670,10 +1709,20 @@ function renderKeyword(){
     </div></details>`;
   }).join("");
 
+  const head = KD_COLS.map(c => {
+    if (!c.f) return `<div${c.n?' class="num"':''}>${c.t}</div>`;
+    const on = KD_SORT.field === c.f;
+    const arrow = on ? (KD_SORT.dir === "asc" ? "↑" : "↓") : "↕";
+    return `<div class="kdsort${c.n?' num':''}" data-sort="${c.f}" style="cursor:pointer;user-select:none;
+      color:${on?'var(--brand)':'var(--muted)'};font-weight:${on?700:600}"
+      title="눌러서 정렬">${c.t} <span style="opacity:${on?1:.45}">${arrow}</span></div>`;
+  }).join("");
+
   el.innerHTML = `<div style="display:grid;grid-template-columns:${GRID};gap:6px;padding:6px 8px;
       background:var(--soft);border-radius:8px;font-size:12px;color:var(--muted);font-weight:600">
-      ${head.map((h,i)=>`<div${i>=2&&i<=10?' class="num"':''}>${h}</div>`).join("")}</div>`
+      ${head}</div>`
     + (body || `<div class="empty">조건에 맞는 키워드가 없습니다.</div>`);
+  el.querySelectorAll(".kdsort").forEach(h => h.onclick = () => kdSetSort(h.dataset.sort));
 }
 
 // ---------- 뷰 전환 ----------
