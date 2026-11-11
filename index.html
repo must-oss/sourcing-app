@@ -258,7 +258,15 @@
         <div class="toolbar">
           <input type="search" id="qProduct" placeholder="제품명 검색…">
           <select id="fChannel"><option value="">전체 채널</option></select>
-          <select id="fDate"><option value="">전체 날짜</option></select>
+          <span class="seg" style="display:inline-flex;gap:0">
+            <button id="dpWeek" class="active" data-days="7">최근 1주</button>
+            <button id="dpTwo" data-days="14">2주</button>
+            <button id="dpMonth" data-days="30">1개월</button>
+            <button id="dpAll" data-days="0">전체</button>
+          </span>
+          <input type="date" id="fFrom" style="padding:7px 8px">
+          <span style="color:var(--muted)">~</span>
+          <input type="date" id="fTo" style="padding:7px 8px">
           <span class="count" id="scCount"></span>
         </div>
         <div class="tablewrap">
@@ -312,7 +320,10 @@
       <div class="meta" id="kdMeta"></div>
       <div class="hint">💡 순위가 오르는 키워드를 <b>단계별</b>로 가립니다.
         <b>🌱 신호 포착</b>이 가장 이른 단계 — 1주 순위가 크게 뛰었지만 월별 추이는 아직 못 따라온 구간입니다.
-        키워드를 클릭하면 월별 수치와 홈쇼핑 편성이 펼쳐집니다.</div>
+        키워드를 클릭하면 월별 수치와 홈쇼핑 편성이 펼쳐집니다.<br>
+        상승 칸의 <b style="color:var(--line)">0</b> 은 <b>그 기간엔 순위가 안 올랐다</b>는 뜻이고,
+        <b style="color:var(--line)">—</b> 는 <b>값이 없다</b>는 뜻입니다.
+        이미 1~2위인 키워드는 더 오를 자리가 없어 0으로 나옵니다 — 그럴 땐 <b>배수</b>를 보세요.</div>
 
       <div class="toolbar">
         <input type="search" id="kdQ" placeholder="키워드 검색…" style="min-width:180px">
@@ -1194,21 +1205,44 @@ function renderMeta(){
     + (CONFIGURED?"":` <span class="previewbadge">미리보기 모드 (Supabase 미연결)</span>`);
 }
 
+// 편성이 누적되면서 날짜가 석 달치가 됐다. 하루씩 고르는 셀렉트로는 못 본다.
+// 기간으로 자르고, 기본은 '가장 최근에 수집한 일주일치'(데이터 마지막 날 기준 7일).
+let SC_DATES = [];
+function scSetRange(days){
+  const from = document.getElementById("fFrom"), to = document.getElementById("fTo");
+  if (!SC_DATES.length) return;
+  const last = SC_DATES[SC_DATES.length-1];
+  if (!days){ from.value = SC_DATES[0]; to.value = last; }
+  else {
+    const t = new Date(last + "T00:00:00"); t.setDate(t.getDate() - (days-1));
+    from.value = anYmd(t) < SC_DATES[0] ? SC_DATES[0] : anYmd(t);
+    to.value = last;
+  }
+  document.querySelectorAll("#scheduleView .seg button[data-days]").forEach(b=>
+    b.classList.toggle("active", +b.dataset.days === days));
+}
+
 function fillFilters(){
   const chans=[...new Set(DATA.schedule.map(r=>r.channel))].sort();
-  const dates=[...new Set(DATA.schedule.map(r=>r.date))].sort();
-  const fc=document.getElementById("fChannel"), fd=document.getElementById("fDate");
+  SC_DATES=[...new Set(DATA.schedule.map(r=>r.date).filter(Boolean))].sort();
+  const fc=document.getElementById("fChannel");
   chans.forEach(c=>fc.insertAdjacentHTML("beforeend",`<option>${esc(c)}</option>`));
-  dates.forEach(d=>fd.insertAdjacentHTML("beforeend",`<option>${esc(d)}</option>`));
+  const from=document.getElementById("fFrom"), to=document.getElementById("fTo");
+  if (SC_DATES.length){
+    from.min = to.min = SC_DATES[0];
+    from.max = to.max = SC_DATES[SC_DATES.length-1];
+  }
+  scSetRange(7);
 }
 
 function renderSchedule(){
   const q=document.getElementById("qProduct").value.trim().toLowerCase();
   const ch=document.getElementById("fChannel").value;
-  const dt=document.getElementById("fDate").value;
+  const from=document.getElementById("fFrom").value, to=document.getElementById("fTo").value;
   let rows=DATA.schedule.filter(r=>
     (!q || (r.product||"").toLowerCase().includes(q)) &&
-    (!ch || r.channel===ch) && (!dt || r.date===dt));
+    (!ch || r.channel===ch) &&
+    (!from || r.date>=from) && (!to || r.date<=to));
   const tb=document.querySelector("#scheduleTable tbody");
   let prev=null, html="";
   for(const r of rows){
@@ -1565,6 +1599,9 @@ function kdWeeksUp(){
     if (r.up1w === null || r.up1w === undefined) return;
     (by[r.keyword] = by[r.keyword] || []).push(r);
   });
+  // up1w 컬럼은 2026-11 에 추가됐다. 그 전 주차에는 값이 없어서 아예 못 센다.
+  // 한 건도 없으면 '0주'가 아니라 '모름'으로 보여야 한다.
+  if (!Object.keys(by).length) return null;
   const out = {};
   for (const [kw, list] of Object.entries(by)){
     list.sort((a,b)=> a.week < b.week ? -1 : 1);
@@ -1608,7 +1645,7 @@ function kdBuild(){
     const lastM = act ? act[12] : 0;
     const wild = s.pred && lastM > 0 && s.pred / lastM > 5;
     return { ...s, act, stage: st.k, mult: st.mult, lab, wild,
-             streak: (streaks[s.keyword] || {}).streak || 0,
+             streak: streaks ? ((streaks[s.keyword] || {}).streak || 0) : null,
              bcast: bc[s.keyword] || [] };
   });
 }
@@ -1667,8 +1704,10 @@ function renderKeyword(){
 
   const GRID = KD_GRID;
   const num = v => Number(v||0).toLocaleString();
+  // 0 은 '데이터 없음'이 아니라 '그 기간엔 순위가 안 올랐다'는 실제 값이다.
+  // 모름(—)과 구분되게 흐린 0 으로 찍는다.
   const up = v => (v||0) > 0 ? `<span style="color:var(--brand);font-weight:600">+${v}</span>`
-                             : `<span style="color:var(--muted)">·</span>`;
+                             : `<span style="color:var(--line)" title="그 기간엔 순위가 오르지 않았습니다">0</span>`;
 
   const body = rows.map(r => {
     const S = KD_STAGES[KD_ORDER[r.stage]];
@@ -1685,8 +1724,10 @@ function renderKeyword(){
       <div><span class="caret">▸</span><b>${esc(r.keyword)}</b></div>
       <div class="num">${up(r.up1w)}</div><div class="num">${up(r.up1m)}</div>
       <div class="num">${up(r.up6m)}</div><div class="num">${up(r.up1y)}</div>
-      <div class="num">${r.streak>=2?`<span style="color:var(--brand);font-weight:700">${r.streak}주</span>`
-                                    :`<span style="color:var(--muted)">${r.streak||"·"}</span>`}</div>
+      <div class="num" title="${r.streak===null?'다음 주 수집부터 쌓입니다':'몇 주 연속 상승 명단에 있었나'}">
+        ${r.streak===null ? `<span style="color:var(--line)">—</span>`
+          : r.streak>=2 ? `<span style="color:var(--brand);font-weight:700">${r.streak}주</span>`
+          : `<span style="color:var(--muted)">${r.streak||"0"}</span>`}</div>
       <div class="num">${num(r.search)}</div>
       <div class="num" style="color:var(--muted)">${esc(r.comp??"-")}</div>
       <div class="num" style="font-weight:600;color:${(r.mult||0)>=1.3?'var(--brand)':'inherit'}">
@@ -1827,7 +1868,12 @@ document.getElementById("anThresh").addEventListener("change",renderAnalysis);
 document.getElementById("kdQ").addEventListener("input",renderKeyword);
 ["kdCat","kdSearch","kdComp","kdW1","kdMult"].forEach(id=>
   document.getElementById(id).addEventListener("change",renderKeyword));
-["qProduct","fChannel","fDate"].forEach(id=>document.getElementById(id).addEventListener("input",renderSchedule));
+["qProduct","fChannel","fFrom","fTo"].forEach(id=>document.getElementById(id).addEventListener("input",renderSchedule));
+// 날짜를 손으로 고치면 프리셋 강조는 풀어준다
+["fFrom","fTo"].forEach(id=>document.getElementById(id).addEventListener("change",()=>
+  document.querySelectorAll("#scheduleView .seg button[data-days]").forEach(b=>b.classList.remove("active"))));
+document.querySelectorAll("#scheduleView .seg button[data-days]").forEach(b=>
+  b.onclick=()=>{ scSetRange(+b.dataset.days); renderSchedule(); });
 document.getElementById("qKeyword").addEventListener("input",renderKeywords);
 document.querySelectorAll(".kwhead .sortable").forEach(h=>h.onclick=()=>setSort(h.dataset.sort));
 document.getElementById("memReload").onclick=loadMembers;
