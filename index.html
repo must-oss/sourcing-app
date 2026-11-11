@@ -319,11 +319,66 @@
     <section id="tab-keyword" hidden>
       <div class="meta" id="kdMeta"></div>
       <div class="hint">💡 순위가 오르는 키워드를 <b>단계별</b>로 가립니다.
-        <b>🌱 신호 포착</b>이 가장 이른 단계 — 1주 순위가 크게 뛰었지만 월별 추이는 아직 못 따라온 구간입니다.
-        키워드를 클릭하면 월별 수치와 홈쇼핑 편성이 펼쳐집니다.<br>
-        상승 칸의 <b style="color:var(--line)">0</b> 은 <b>그 기간엔 순위가 안 올랐다</b>는 뜻이고,
-        <b style="color:var(--line)">—</b> 는 <b>값이 없다</b>는 뜻입니다.
-        이미 1~2위인 키워드는 더 오를 자리가 없어 0으로 나옵니다 — 그럴 땐 <b>배수</b>를 보세요.</div>
+        키워드를 클릭하면 월별 수치와 홈쇼핑 편성이 펼쳐집니다.
+        <a href="#" id="kdHelpOpen" style="font-weight:600">단계·배수 읽는 법 ▸</a></div>
+
+      <details id="kdHelp" style="margin:0 0 14px;border:1px solid var(--line);border-radius:10px;background:var(--card)">
+        <summary style="padding:10px 14px;cursor:pointer;font-weight:700">📖 단계·배수 읽는 법</summary>
+        <div style="padding:0 14px 14px;font-size:13px;line-height:1.65">
+
+          <div style="font-weight:700;margin:6px 0 6px">단계</div>
+          <div class="tablewrap"><table style="font-size:13px;min-width:640px"><thead><tr>
+            <th style="width:112px">단계</th><th style="width:38%">무슨 뜻인가</th><th>어떻게 쓰나</th>
+          </tr></thead><tbody>
+            <tr><td><b>🌱 신호 포착</b></td>
+              <td>1주 순위가 기준치 이상 뛰었다. <b>월별 추이는 아직 못 따라왔다</b></td>
+              <td><b>가장 이른 단계.</b> 위탁처럼 소싱이 빠른 품목이면 선점 대상.
+                  한 번 튄 것일 수도 있으니 <b>다음 주에도 남아 있는지</b>(연속 칸) 확인한다</td></tr>
+            <tr><td><b>🔥 상승 확인</b></td>
+              <td>최근 3개월 평균이 직전 3개월보다 배수 기준 이상 늘었고, <b>아직 안 꺾였다</b></td>
+              <td><b>시장이 생긴 게 확인된 구간.</b> 소싱·상세페이지·광고에 몇 주 걸려도
+                  그 사이 계속 커진다. 가장 안전하다</td></tr>
+            <tr><td><b>📈 완만 상승</b></td>
+              <td>올라오고는 있지만 속도가 느리다 (배수 1.1 이상)</td>
+              <td>급하지 않다. 경쟁강도가 낮으면 미리 자리를 잡아둘 만하다</td></tr>
+            <tr><td><b>⚠️ 고점·꺾임</b></td>
+              <td>배수는 높은데 <b>최근 달이 두 달 전보다 낮다</b></td>
+              <td>이미 정점을 지났을 수 있다. 한 달 반짝 뜬 뒤 빠지는 중인 경우가 많아
+                  <b>재고를 떠안을 위험</b>이 있다</td></tr>
+            <tr><td><b>➖ 정체·하락</b></td><td>뚜렷한 변화가 없다</td>
+              <td>기본으로 접혀 있다. 칩을 누르면 펼쳐진다</td></tr>
+            <tr><td><b>❓ 추이 미수집</b></td>
+              <td>월별 차트를 아직 못 받았다 (요청 제한 때문에 매주 조금씩 채운다)</td>
+              <td>순위 상승폭만 보고 판단한다. 배수 칸은 비어 있다</td></tr>
+          </tbody></table></div>
+
+          <div style="font-weight:700;margin:16px 0 6px">배수</div>
+          <div style="background:var(--soft);border-radius:8px;padding:10px 12px;margin-bottom:8px">
+            <code style="font-size:13px">배수 = 최근 3개월 평균 ÷ 직전 3개월 평균</code><br>
+            <span style="color:var(--muted)">예) 젖산마그네슘 — (110,880+146,700+188,640)/3 ÷ (340+17,430+57,890)/3 = <b>5.90</b></span>
+          </div>
+          <ul style="margin:0 0 4px;padding-left:18px">
+            <li><b>1.0</b> 이면 그대로, <b>2.0</b> 이면 두 배로 늘었다는 뜻이다.</li>
+            <li><b>신규</b> 는 직전 3개월 검색이 0이라 나눌 수가 없다는 표시다. 막 생긴 키워드다.</li>
+            <li><b>창이 고정이라 최근 2~3주 급등은 못 담는다.</b> 월별 차트가 지난달까지만 있기 때문이다.
+                그래서 배수가 낮아도 <b>1주 순위</b>가 크게 뛰었으면 🌱 로 분류한다
+                (hw3단백질 — 배수 0.40, 1주 +217).</li>
+          </ul>
+
+          <div style="font-weight:700;margin:16px 0 6px">나머지 칸</div>
+          <ul style="margin:0;padding-left:18px">
+            <li><b>1주 / 1개월 / 6개월 / 1년</b> — 그 시점 대비 <b>순위가 몇 계단 올랐나</b>.
+                검색량이 아니다. 네 칸은 서로 독립이다.
+                <b style="color:var(--line)">0</b> 은 "그 기간엔 안 올랐다", <b style="color:var(--line)">—</b> 는 "값이 없다".
+                <b>이미 1~2위면 올라갈 자리가 없어 0으로 나온다</b> — 그럴 땐 배수를 본다.</li>
+            <li><b>연속</b> — 몇 주 연속 상승 명단에 있었나. 한 번 튄 것과 진짜를 가른다. 매주 쌓인다.</li>
+            <li><b>이달 예측</b> — 아이템스카우트가 내놓는 이달 예상 검색량.
+                데이터가 몇 달 안 되는 신규 키워드에서 과하게 부풀기 때문에,
+                <b>실측의 5배를 넘으면 회색 ⚠️</b> 로 표시한다.</li>
+            <li><b>홈쇼핑</b> — 최근 8주 방송 횟수. <b>검색도 오르고 방송도 돈다</b>면 신호가 겹친 것이다.</li>
+          </ul>
+        </div>
+      </details>
 
       <div class="toolbar">
         <input type="search" id="kdQ" placeholder="키워드 검색…" style="min-width:180px">
@@ -1514,7 +1569,7 @@ const KD_STAGES = [
   { k:"rising", icon:"🔥", name:"상승 확인", desc:"최근 3개월 평균이 직전보다 크게 늘었고 아직 꺾이지 않았다" },
   { k:"slow",   icon:"📈", name:"완만 상승", desc:"올라오는 중이지만 속도가 완만하다" },
   { k:"peak",   icon:"⚠️", name:"고점·꺾임", desc:"배수는 높지만 최근 달이 두 달 전보다 낮다" },
-  { k:"flat",   icon:"➖", name:"정체·하락", desc:"" },
+  { k:"flat",   icon:"➖", name:"정체·하락", desc:"뚜렷한 변화가 없다" },
   { k:"nodata", icon:"❓", name:"추이 미수집", desc:"월별 차트를 아직 못 받았다. 순위 신호만 있다" },
 ];
 const KD_ORDER = Object.fromEntries(KD_STAGES.map((s,i)=>[s.k,i]));
@@ -1865,6 +1920,11 @@ document.getElementById("viewKeyword").onclick=()=>showView("keyword");
 document.getElementById("viewAnalysis").onclick=()=>showView("analysis");
 document.getElementById("anThresh").addEventListener("change",renderAnalysis);
 // 키워드 발굴 필터
+document.getElementById("kdHelpOpen").onclick=(e)=>{
+  e.preventDefault();
+  const d=document.getElementById("kdHelp"); d.open=!d.open;
+  if(d.open) d.scrollIntoView({behavior:"smooth",block:"nearest"});
+};
 document.getElementById("kdQ").addEventListener("input",renderKeyword);
 ["kdCat","kdSearch","kdComp","kdW1","kdMult"].forEach(id=>
   document.getElementById(id).addEventListener("change",renderKeyword));
