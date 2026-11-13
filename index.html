@@ -1307,6 +1307,7 @@ function renderSchedule(){
   }
   tb.innerHTML = html || `<tr><td colspan="5" class="empty">결과 없음</td></tr>`;
   document.getElementById("scCount").textContent = `${rows.length}건`;
+  if (typeof uiSave === "function") uiSave();
 }
 
 let kwSort = {field:"count", dir:"desc"};   // 정렬 상태
@@ -1327,6 +1328,7 @@ function setSort(field){
   if(kwSort.field===field) kwSort.dir = kwSort.dir==="asc"?"desc":"asc";
   else { kwSort.field=field; kwSort.dir = (field==="comp")?"asc":"desc"; } // 경쟁강도는 낮은 순부터
   renderKeywords();
+  if (typeof uiSave === "function") uiSave();
 }
 function renderKeywords(){
   const q=document.getElementById("qKeyword").value.trim().toLowerCase();
@@ -1593,6 +1595,7 @@ const KD_COLS = [
 ];
 const KD_GRID = KD_COLS.map(c=>c.w).join(" ");
 let KD_SORT = { field:"stage", dir:"asc" };
+let KD_DONE = false;            // 한 번 그렸나 — 탭을 오갈 때 다시 그리지 않으려고
 
 function kdVal(r, f){
   switch(f){
@@ -1819,10 +1822,15 @@ function renderKeyword(){
       ${head}</div>`
     + (body || `<div class="empty">조건에 맞는 키워드가 없습니다.</div>`);
   el.querySelectorAll(".kdsort").forEach(h => h.onclick = () => kdSetSort(h.dataset.sort));
+  KD_DONE = true;
+  if (typeof uiSave === "function") uiSave();
 }
 
 // ---------- 뷰 전환 ----------
+let SC_VIEW = "schedule";      // 홈쇼핑 탭 안에서 보던 뷰
 function showView(v){
+  SC_VIEW = v;
+  if (typeof uiSave === "function") uiSave();
   document.getElementById("scheduleView").classList.toggle("hidden", v!=="schedule");
   document.getElementById("keywordView").classList.toggle("hidden", v!=="keyword");
   document.getElementById("analysisView").classList.toggle("hidden", v!=="analysis");
@@ -1844,8 +1852,50 @@ async function startApp(userLabel, isAdmin){
   document.querySelectorAll(".ytguide").forEach(d=>d.hidden = !isAdmin);  // 가이드의 유튜브 항목도 같이
   IS_ADMIN = !!isAdmin;
   DATA = await loadData();
-  renderMeta(); fillFilters(); renderSchedule(); renderKeywords();
+  renderMeta(); fillFilters();
+  uiRestore();                                     // 지난번에 보던 조건·정렬·탭을 되살린다
+  renderSchedule(); renderKeywords();
   ytLoadQuota();                                   // 유튜브 남은 횟수 표시
+}
+
+// ═══════════ 보던 화면 유지 ═══════════
+// 탭을 옮겼다 돌아왔을 때, 그리고 새로고침한 뒤에도 조건·정렬·스크롤이 그대로이게 한다.
+const UI_KEY = "sd_ui_v1";
+const UI_FIELDS = ["qProduct","fChannel","fFrom","fTo",
+                   "kdQ","kdCat","kdSearch","kdComp","kdW1","kdMult"];
+let UI_READY = false;
+
+function uiSave(){
+  if (!UI_READY) return;
+  const v = {};
+  UI_FIELDS.forEach(id => { const el = document.getElementById(id); if (el) v[id] = el.value; });
+  try {
+    localStorage.setItem(UI_KEY, JSON.stringify({
+      f: v, view: SC_VIEW, tab: CUR_TAB,
+      kdOff: [...KD_OFF], kdSort: KD_SORT, kwSort: kwSort,
+    }));
+  } catch(e) {}
+}
+
+function uiRestore(){
+  let s = null;
+  try { s = JSON.parse(localStorage.getItem(UI_KEY) || "null"); } catch(e) {}
+  if (s){
+    UI_FIELDS.forEach(id => {
+      const el = document.getElementById(id);
+      // 날짜는 수집 범위가 매주 바뀌므로, 저장값이 범위 밖이면 기본(최근 1주)을 쓴다
+      if (!el || s.f?.[id] === undefined || s.f[id] === "") return;
+      if ((id === "fFrom" || id === "fTo") && SC_DATES.length
+          && (s.f[id] < SC_DATES[0] || s.f[id] > SC_DATES[SC_DATES.length-1])) return;
+      el.value = s.f[id];
+    });
+    if (Array.isArray(s.kdOff)) KD_OFF = new Set(s.kdOff);
+    if (s.kdSort?.field) KD_SORT = s.kdSort;
+    if (s.kwSort?.field) kwSort = s.kwSort;
+    if (s.view) showView(s.view);
+    if (s.tab && s.tab !== "hsmoa") showTab(s.tab);
+  }
+  UI_READY = true;
 }
 
 // 이미지 생성 탭 사용 여부 — false 로 바꾸면 탭이 숨겨집니다.
@@ -1861,15 +1911,23 @@ if(SHOW_IMAGE_TAB) document.getElementById("tabImage").hidden = false;
 const ADMIN_TABS = ["coupang","admin","youtube","keyword"];   // 유튜브·키워드 발굴은 아직 비공개
 let IS_ADMIN = false;
 
+let CUR_TAB = "hsmoa";
+const TAB_SCROLL = {};                    // 탭마다 보던 위치를 기억한다
+
 function showTab(name){
   if(ADMIN_TABS.includes(name) && !IS_ADMIN){ name = "hsmoa"; }
+  if(CUR_TAB) TAB_SCROLL[CUR_TAB] = window.scrollY;   // 떠나는 탭의 위치 저장
+  CUR_TAB = name;
   ["hsmoa","keyword","sourcing","image","youtube","guide","coupang","admin"].forEach(t=>{
     const s=document.getElementById("tab-"+t); if(s) s.hidden = (t!==name);
   });
   document.querySelectorAll("nav.tabs button[data-tab]").forEach(x=>
     x.classList.toggle("active", x.dataset.tab===name));
   if(name==="admin") loadMembers();
-  if(name==="keyword") renderKeyword();
+  // 이미 그려둔 표는 다시 그리지 않는다 — 펼쳐둔 키워드가 접히지 않게
+  if(name==="keyword" && !KD_DONE) renderKeyword();
+  uiSave();
+  requestAnimationFrame(()=> window.scrollTo(0, TAB_SCROLL[name] || 0));
   if(name==="youtube") ytHistLoad();      // 탭에 들어올 때 내역 칩을 채워둔다
 }
 
