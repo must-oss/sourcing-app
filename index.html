@@ -1769,10 +1769,16 @@ function renderKeyword(){
 
   const body = rows.map(r => {
     const S = KD_STAGES[KD_ORDER[r.stage]];
-    const months = r.act ? r.act.map((v,i)=>
-        `<tr><td class="c">${r.lab.act[i]}</td><td class="c">${num(v)}</td></tr>`).join("") : "";
-    const predRow = r.pred ? `<tr><td class="c" style="color:var(--muted)">${r.lab.pred} 예측</td>
-        <td class="c" style="color:${r.wild?'var(--muted)':'var(--ink)'}">${num(r.pred)}${r.wild?" ⚠️":""}</td></tr>` : "";
+    // 월별 수치는 가로로 편다 — 세로로 14줄을 쌓으면 펼침이 너무 길어진다.
+    const peak = r.act ? Math.max(...r.act) : 0;
+    const mHead = r.act
+      ? r.act.map((_,i)=>`<th class="c" style="font-weight:600;padding:3px 7px">${r.lab.act[i]}</th>`).join("")
+        + (r.pred ? `<th class="c" style="padding:3px 7px;color:var(--muted)">${r.lab.pred} 예측</th>` : "")
+      : "";
+    const mBody = r.act
+      ? r.act.map(v=>`<td class="c" style="padding:3px 7px;${v===peak&&peak>0?'font-weight:700;color:var(--brand)':''}">${num(v)}</td>`).join("")
+        + (r.pred ? `<td class="c" style="padding:3px 7px;color:var(--muted)">${num(r.pred)}${r.wild?" ⚠️":""}</td>` : "")
+      : "";
     const bl = r.bcast.map(b=>`<tr><td class="c">${esc(b.date)}</td><td class="c">${esc(b.time)}</td>`
       +`<td class="c">${chanCell(b.channel)}</td><td>${esc(b.product)}</td></tr>`).join("");
 
@@ -1796,10 +1802,13 @@ function renderKeyword(){
       <div class="num">${r.bcast.length?`<span style="color:var(--brand);font-weight:700">${r.bcast.length}회</span>`
                                        :`<span style="color:var(--muted)">·</span>`}</div>
     </summary>
-    <div class="body" style="display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start">
-      ${r.act?`<div><div style="font-weight:600;margin-bottom:4px">월별 검색수</div>
-        <table style="font-size:12px"><tbody>${months}${predRow}</tbody></table></div>`:""}
-      <div style="flex:1;min-width:300px">
+    <div class="body" style="display:flex;flex-direction:column;gap:14px">
+      ${r.act?`<div>
+        <div style="font-weight:600;margin-bottom:4px">월별 검색수
+          <span style="color:var(--muted);font-weight:400;font-size:12px">· 최고치는 초록</span></div>
+        <div class="tablewrap"><table style="font-size:12px;white-space:nowrap">
+          <thead><tr>${mHead}</tr></thead><tbody><tr>${mBody}</tr></tbody></table></div></div>`:""}
+      <div>
         <div style="font-weight:600;margin-bottom:4px">홈쇼핑 편성 (최근 8주) ${r.bcast.length}건</div>
         ${r.bcast.length?`<div class="tablewrap"><table><thead><tr><th class="c">날짜</th><th class="c">시간</th>
           <th class="c">채널</th><th>제품명</th></tr></thead><tbody>${bl}</tbody></table></div>`
