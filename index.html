@@ -315,7 +315,7 @@
       </div>
     </section>
 
-    <!-- 탭: 키워드 발굴 — 아이템스카우트 순위 상승 + 13개월 검색 추이 -->
+    <!-- 탭: 키워드 발굴 — 아이템스카우트 순위 상승 + 월별 검색 추이 -->
     <section id="tab-keyword" hidden>
       <div class="meta" id="kdMeta"></div>
       <div class="hint">💡 순위가 오르는 키워드를 <b>단계별</b>로 가립니다.
@@ -359,7 +359,11 @@
           </div>
           <ul style="margin:0 0 4px;padding-left:18px">
             <li><b>1.0</b> 이면 그대로, <b>2.0</b> 이면 두 배로 늘었다는 뜻이다.</li>
-            <li><b>신규</b> 는 직전 3개월 검색이 0이라 나눌 수가 없다는 표시다. 막 생긴 키워드다.</li>
+            <li><b>신규</b> 는 <b>직전 3개월 평균이 50 미만</b>이라 비교할 과거가 없다는 표시다.
+                분모가 한 자리수면 배수가 멋대로 커진다 — 직전3평균이 3 회뿐인 키워드가
+                배수 1,025 로 표 맨 위에 오는 식이다. 그래서 숫자를 주지 않는다.</li>
+            <li><b>0 도 한 달로 센다.</b> 5월이 0이고 6·7월만 있으면 분모는 (0+6월+7월)÷3 이다.
+                둘만 평균 낸 값이 아니라서, 그만큼 배수가 크게 잡힌다.</li>
             <li><b>창이 고정이라 최근 2~3주 급등은 못 담는다.</b> 월별 차트가 지난달까지만 있기 때문이다.
                 그래서 배수가 낮아도 <b>1주 순위</b>가 크게 뛰었으면 🌱 로 분류한다
                 (hw3단백질 — 배수 0.40, 1주 +217).</li>
@@ -375,6 +379,11 @@
             <li><b>이달 예측</b> — 아이템스카우트가 내놓는 이달 예상 검색량.
                 데이터가 몇 달 안 되는 신규 키워드에서 과하게 부풀기 때문에,
                 <b>실측의 5배를 넘으면 회색 ⚠️</b> 로 표시한다.</li>
+            <li><b>12개월 추이</b> — 지난달까지의 월별 실검색수. 펼치면 숫자로 볼 수 있다.
+                아이템스카우트는 13개월을 주지만 <b>가장 오래된 달은 빼고 보여준다</b> —
+                그 칸은 13개월 창에 날짜가 걸친 만큼만 담긴 반쪼가리여서,
+                긁은 날이 월초인지 월말인지에 따라 90%도 되고 20%도 된다.
+                키워드끼리 비교가 안 되는 숫자다. <b>배수와 단계는 13개월 원본으로 계산한다.</b></li>
             <li><b>홈쇼핑</b> — 최근 8주 방송 횟수. <b>검색도 오르고 방송도 돈다</b>면 신호가 겹친 것이다.</li>
           </ul>
         </div>
@@ -1445,7 +1454,8 @@ function anBadge(s){
   if (st && st[0]) out.push(`<span style="background:var(--band);border:1px solid var(--line);
     border-radius:999px;padding:1px 8px;font-size:12px;white-space:nowrap">${st[0]} ${st[1]}</span>`);
   if ((s.up1w || 0) >= 40) out.push(`<span style="color:var(--brand);font-weight:700;font-size:12px">1주 +${s.up1w}</span>`);
-  if (s.mult != null && s.mult < 90) out.push(`<span style="color:var(--muted);font-size:12px">${(+s.mult).toFixed(1)}x</span>`);
+  // 음수는 '신규' 표시값이라 배지를 달지 않는다 (배수라고 할 숫자가 없다)
+  if (s.mult != null && +s.mult >= 0) out.push(`<span style="color:var(--muted);font-size:12px">${(+s.mult).toFixed(1)}x</span>`);
   return out.join(" ");
 }
 
@@ -1590,7 +1600,7 @@ const KD_COLS = [
   { f:"comp",   t:"경쟁",    w:"56px",  n:1, a:"asc"  },   // 경쟁은 낮은 순부터
   { f:"mult",   t:"배수",    w:"54px",  n:1, a:"desc" },
   { f:"pred",   t:"이달예측", w:"82px", n:1, a:"desc" },
-  {             t:"13개월 추이", w:"136px"                 },
+  {             t:"12개월 추이", w:"136px"                 },
   { f:"bcast",  t:"홈쇼핑",  w:"68px",  n:1, a:"desc" },
 ];
 const KD_GRID = KD_COLS.map(c=>c.w).join(" ");
@@ -1601,7 +1611,10 @@ function kdVal(r, f){
   switch(f){
     case "stage":  return KD_ORDER[r.stage];
     case "comp":   { const c = parseFloat(r.comp); return isNaN(c) ? 999 : c; }
-    case "mult":   return (r.mult === null || r.mult === undefined) ? -1 : r.mult;
+    // '신규'는 비교할 숫자가 없으므로 맨 아래로 보낸다. 예전처럼 99 로 치면
+    // 걸러낸 106종이 그대로 배수 정렬 맨 위를 차지해 거르는 의미가 없어진다.
+    case "mult":   return (r.mult === null || r.mult === undefined) ? -3
+                        : (r.mult === KD_NEW ? -2 : r.mult);
     case "pred":   return r.pred || -1;
     case "streak": return r.streak || 0;
     case "bcast":  return r.bcast.length;
@@ -1618,21 +1631,39 @@ function kdSetSort(f){
 
 function kdAvg(a){ return a.reduce((x,y)=>x+y,0)/a.length; }
 
+// 배수를 숫자로 줄 최소 분모(직전 3개월 평균 검색수).
+// 50 으로 정한 근거 — 1,001종을 놓고 세어보니 50 만 걸어도 분모가 한 자리수인 것들이
+// 전부 빠지고(쿠드로닌 1025배·직전3평균 3 등), 100 까지 올리면 8종만 더 옮겨지는데
+// 그 안에 젓산마그네숨(검색 14,950 · 90→4,650) 같은 실제 신호가 섞인다.
+const KD_MIN_BASE = 50;
+
+// '신규'(비교할 과거가 없음)를 나타내는 값. 비율은 음수가 될 수 없으므로 안전하다.
+// 예전엔 99 를 썼는데, 분모 하한이 생긴 뒤로는 진짜 배수도 99 를 넘을 수 있어
+// 충돌했다 — 종근당이노시톨이 254배(직전3평균 103)인데 '신규'로 표시됐다.
+const KD_NEW = -1;
+
 // 단계 판정 — 저장된 값을 쓰지 않고 매번 계산한다. 그래야 기준을 화면에서 바꿀 수 있다.
 function kdStage(act, up1w, w1thr, multThr){
   // 배수는 단계와 상관없이 추이가 있으면 늘 계산한다. 신호 포착으로 분류된
   // 키워드도 추이를 같이 봐야 '월별이 아직 못 따라왔다'가 눈에 보인다.
+  // 분모(직전 3개월 평균)가 KD_MIN_BASE 미만이면 배수를 숫자로 주지 않고 '신규'(99)로 묶는다.
+  //   0 도 한 달로 세어 3 으로 나누므로, 분모가 한 자리수면 배수가 멋대로 커진다.
+  //   실제로 쿠드로닌은 직전3평균이 3 회뿐인데 배수 1,025 로 표 맨 위를 차지했다.
+  //   비교할 과거가 없는 키워드에 배수를 매기는 것 자체가 틀린 것이라, 숫자를 지운다.
   let mult = null;
   if (act && act.length >= 13){
     const last3 = kdAvg(act.slice(-3)), prev3 = kdAvg(act.slice(-6,-3));
-    mult = prev3 > 0 ? last3/prev3 : (last3 > 0 ? 99 : 0);
+    mult = prev3 >= KD_MIN_BASE ? last3/prev3 : (last3 > 0 ? KD_NEW : 0);
   }
   if ((up1w||0) >= w1thr) return { k:"signal", mult };
   if (mult === null)      return { k:"nodata", mult };
+  // 단계 판정에서는 '신규'를 크게 늘어난 것으로 본다 — 실제로 늘어난 건 맞다.
+  // 배수 칸에만 숫자를 안 줄 뿐이다.
+  const cmp = (mult === KD_NEW) ? 99 : mult;
   const lastM = act[12], twoAgo = act[10];
-  if (mult >= multThr && lastM >= twoAgo) return { k:"rising", mult };
-  if (mult >= 1.1     && lastM >= twoAgo) return { k:"slow",   mult };
-  if (mult >= 1.2)                        return { k:"peak",   mult };
+  if (cmp >= multThr && lastM >= twoAgo) return { k:"rising", mult };
+  if (cmp >= 1.1     && lastM >= twoAgo) return { k:"slow",   mult };
+  if (cmp >= 1.2)                        return { k:"peak",   mult };
   return { k:"flat", mult };
 }
 
@@ -1670,7 +1701,7 @@ function kdWeeksUp(){
   return out;
 }
 
-// 13개월 꺾은선
+// 월별 꺾은선. kdBuild 의 view(12개월)를 받는다 — act[0] 은 반쪼가리 달이라 빼고 그린다.
 function kdLine(act){
   const W = 118, H = 26, max = Math.max(1, ...act), n = act.length;
   const pts = act.map((v,i)=> `${(i/(n-1)*(W-2)+1).toFixed(1)},${(H-1 - (v/max)*(H-3)).toFixed(1)}`).join(" ");
@@ -1702,7 +1733,13 @@ function kdBuild(){
     // 예측이 실측 마지막의 5배를 넘으면 모델이 기울기를 그대로 늘린 것 — 믿기 어렵다
     const lastM = act ? act[12] : 0;
     const wild = s.pred && lastM > 0 && s.pred / lastM > 5;
-    return { ...s, act, stage: st.k, mult: st.mult, lab, wild,
+    // 화면에 보여줄 것은 12개월이다. act[0] 은 13개월 창에 걸친 날짜만 담긴
+    // 반쪼가리 달이어서 그 칸만 체계적으로 작다 — 828종 중앙값 0.497, 95%가 1 미만
+    // (이웃한 달끼리는 0.9~1.0 이다). 게다가 채워진 정도가 '긁은 날'에 달려 있어서,
+    // 월초에 긁힌 행은 90% · 월말에 긁힌 행은 20% 가 되어 같은 열에서 서로 비교가 안 된다.
+    // 배수·단계는 act 원본(인덱스 7~12)을 그대로 쓰므로 영향을 받지 않는다.
+    return { ...s, act, view: act ? act.slice(1) : null,
+             vlab: lab.act.slice(1), stage: st.k, mult: st.mult, lab, wild,
              streak: streaks ? ((streaks[s.keyword] || {}).streak || 0) : null,
              bcast: bc[s.keyword] || [] };
   });
@@ -1769,14 +1806,14 @@ function renderKeyword(){
 
   const body = rows.map(r => {
     const S = KD_STAGES[KD_ORDER[r.stage]];
-    // 월별 수치는 가로로 편다 — 세로로 14줄을 쌓으면 펼침이 너무 길어진다.
-    const peak = r.act ? Math.max(...r.act) : 0;
-    const mHead = r.act
-      ? r.act.map((_,i)=>`<th class="c" style="font-weight:600;padding:3px 7px">${r.lab.act[i]}</th>`).join("")
+    // 월별 수치는 가로로 편다 — 세로로 13줄을 쌓으면 펼침이 너무 길어진다.
+    const peak = r.view ? Math.max(...r.view) : 0;
+    const mHead = r.view
+      ? r.view.map((_,i)=>`<th class="c" style="font-weight:600;padding:3px 7px">${r.vlab[i]}</th>`).join("")
         + (r.pred ? `<th class="c" style="padding:3px 7px;color:var(--muted)">${r.lab.pred} 예측</th>` : "")
       : "";
-    const mBody = r.act
-      ? r.act.map(v=>`<td class="c" style="padding:3px 7px;${v===peak&&peak>0?'font-weight:700;color:var(--brand)':''}">${num(v)}</td>`).join("")
+    const mBody = r.view
+      ? r.view.map(v=>`<td class="c" style="padding:3px 7px;${v===peak&&peak>0?'font-weight:700;color:var(--brand)':''}">${num(v)}</td>`).join("")
         + (r.pred ? `<td class="c" style="padding:3px 7px;color:var(--muted)">${num(r.pred)}${r.wild?" ⚠️":""}</td>` : "")
       : "";
     const bl = r.bcast.map(b=>`<tr><td class="c">${esc(b.date)}</td><td class="c">${esc(b.time)}</td>`
@@ -1794,18 +1831,17 @@ function renderKeyword(){
           : `<span style="color:var(--muted)">${r.streak||"0"}</span>`}</div>
       <div class="num">${num(r.search)}</div>
       <div class="num" style="color:var(--muted)">${esc(r.comp??"-")}</div>
-      <div class="num" style="font-weight:600;color:${(r.mult||0)>=1.3?'var(--brand)':'inherit'}">
-        ${r.mult===null||r.mult===undefined?"—":(r.mult>=99?"신규":r.mult.toFixed(2))}</div>
+      <div class="num" style="font-weight:600;color:${(r.mult===KD_NEW||r.mult>=1.3)?'var(--brand)':'inherit'}">
+        ${r.mult===null||r.mult===undefined?"—":(r.mult===KD_NEW?"신규":r.mult.toFixed(2))}</div>
       <div class="num" style="color:${r.wild?'var(--muted)':'inherit'}">
         ${r.pred?num(r.pred)+(r.wild?" ⚠️":""):"—"}</div>
-      <div>${r.act?kdLine(r.act):`<span style="color:var(--muted);font-size:12px">미수집</span>`}</div>
+      <div>${r.view?kdLine(r.view):`<span style="color:var(--muted);font-size:12px">미수집</span>`}</div>
       <div class="num">${r.bcast.length?`<span style="color:var(--brand);font-weight:700">${r.bcast.length}회</span>`
                                        :`<span style="color:var(--muted)">·</span>`}</div>
     </summary>
     <div class="body" style="display:flex;flex-direction:column;gap:14px">
-      ${r.act?`<div>
-        <div style="font-weight:600;margin-bottom:4px">월별 검색수
-          <span style="color:var(--muted);font-weight:400;font-size:12px">· 최고치는 초록</span></div>
+      ${r.view?`<div>
+        <div style="font-weight:600;margin-bottom:4px">월별 검색수 <span style="color:var(--muted);font-weight:400;font-size:12px">· 최근 12개월 · 최고치는 초록</span></div>
         <div class="tablewrap"><table style="font-size:12px;white-space:nowrap">
           <thead><tr>${mHead}</tr></thead><tbody><tr>${mBody}</tr></tbody></table></div></div>`:""}
       <div>
