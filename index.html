@@ -326,16 +326,48 @@
         <summary style="padding:10px 14px;cursor:pointer;font-weight:700">📖 단계·배수 읽는 법</summary>
         <div style="padding:0 14px 14px;font-size:13px;line-height:1.65">
 
+          <div style="font-weight:700;margin:6px 0 6px">무엇이 걸러지고, 무엇이 안 걸러지나</div>
+          <div class="tablewrap"><table style="font-size:13px;min-width:560px"><thead><tr>
+            <th style="width:38%">조작</th><th>동작</th>
+          </tr></thead><tbody>
+            <tr><td>검색어 · 카테고리 · <b>검색량</b> · <b>경쟁강도</b></td>
+              <td><b>행을 걸러낸다.</b> 표에서 사라진다</td></tr>
+            <tr><td>단계 칩 (🌱🔥📈⚠️➖❓)</td>
+              <td><b>행을 걸러낸다.</b> 눌러서 접으면 그 단계가 숨는다 — ➖는 기본으로 접혀 있다</td></tr>
+            <tr><td>단계를 가르는 문턱 (1주 +80 · 배수 1.3)</td>
+              <td><b>걸러내지 않는다.</b> 어느 단계로 분류할지만 정한다. 고정값이라 화면에서 못 바꾼다</td></tr>
+          </tbody></table></div>
+          <div style="color:var(--muted);margin:8px 0 14px">
+            ※ <b>1주 상승이 0이어도 걸러지지 않습니다.</b> 지난주 순위가 안 올랐어도 월별 추이가
+            받쳐주면 🔥 상승 확인으로 남습니다 — 실제로 소싱 후보 상위 27종 중 16종이 1주 0 입니다.
+            반대로 ➖ 정체·하락은 기본으로 접혀 있으니, 전체를 보려면 ➖ 칩을 한 번 누르세요.</div>
+
+          <div style="font-weight:700;margin:6px 0 6px">두 문턱을 고정한 근거</div>
+          <div class="tablewrap"><table style="font-size:13px;min-width:520px"><thead><tr>
+            <th style="width:92px">1주 문턱</th><th>🌱</th><th>🔥</th><th>📈</th><th>⚠️</th><th>➖ 정체·하락</th>
+          </tr></thead><tbody>
+            <tr><td>+20계단</td><td>51</td><td>52</td><td>11</td><td>37</td><td>155</td></tr>
+            <tr><td>+40계단</td><td>33</td><td>56</td><td>12</td><td>39</td><td>165</td></tr>
+            <tr><td><b>+80계단 (고정)</b></td><td><b>13</b></td><td><b>60</b></td><td>13</td><td>40</td><td>178</td></tr>
+          </tbody></table></div>
+          <div style="color:var(--muted);margin:8px 0 14px">
+            필터 통과 311종 기준. <b>+40 → +80 에서 빠지는 20종 중 13종(65%)이 ➖ 정체·하락</b>으로
+            돌아갑니다 — 순위만 튀고 검색은 늘지 않은 것들입니다. 또 🌱 판정이 가장 먼저 걸리기 때문에
+            문턱이 낮으면 <b>월별 추이가 이미 받쳐주는 키워드를 🌱이 덮습니다</b>
+            (배수 67배인 저분자유청펩타이드hw3 가 '가장 이른 단계'로 보였습니다). +80 에서 11종 → 4종.<br>
+            배수 1.3 은 백테스트에서 적중률 1.72배를 잰 값이고, <b>출발</b> 칸의 색·적중률도 같은 값을 씁니다.
+            따로 돌릴 수 있게 두면 두 칸이 서로 다른 기준을 말하게 됩니다.</div>
+
           <div style="font-weight:700;margin:6px 0 6px">단계</div>
           <div class="tablewrap"><table style="font-size:13px;min-width:640px"><thead><tr>
             <th style="width:112px">단계</th><th style="width:38%">무슨 뜻인가</th><th>어떻게 쓰나</th>
           </tr></thead><tbody>
             <tr><td><b>🌱 신호 포착</b></td>
-              <td>1주 순위가 기준치 이상 뛰었다. <b>월별 추이는 아직 못 따라왔다</b></td>
+              <td>1주 순위가 <b>+80계단 이상</b> 뛰었다. <b>월별 추이는 아직 못 따라왔다</b></td>
               <td><b>가장 이른 단계.</b> 위탁처럼 소싱이 빠른 품목이면 선점 대상.
                   한 번 튄 것일 수도 있으니 <b>다음 주에도 남아 있는지</b>(연속 칸) 확인한다</td></tr>
             <tr><td><b>🔥 상승 확인</b></td>
-              <td>최근 3개월 평균이 직전 3개월보다 배수 기준 이상 늘었고, <b>아직 안 꺾였다</b></td>
+              <td>최근 3개월 평균이 직전 3개월보다 <b>1.3배 이상</b> 늘었고, <b>아직 안 꺾였다</b></td>
               <td><b>시장이 생긴 게 확인된 구간.</b> 소싱·상세페이지·광고에 몇 주 걸려도
                   그 사이 계속 커진다. 가장 안전하다</td></tr>
             <tr><td><b>📈 완만 상승</b></td>
@@ -530,16 +562,6 @@
           <option value="0.5" selected>0.5 이하</option>
           <option value="0.2">0.2 이하</option>
           <option value="0.05">0.05 이하</option>
-        </select>
-        <select id="kdW1" title="1주 순위가 이만큼 뛰면 '신호 포착'으로 본다">
-          <option value="20">1주 +20계단↑</option>
-          <option value="40" selected>1주 +40계단↑</option>
-          <option value="80">1주 +80계단↑</option>
-        </select>
-        <select id="kdMult" title="최근 3개월 ÷ 직전 3개월">
-          <option value="1.2">배수 1.2↑</option>
-          <option value="1.3" selected>배수 1.3↑</option>
-          <option value="1.5">배수 1.5↑</option>
         </select>
         <span class="count" id="kdCount" style="margin-left:auto"></span>
       </div>
@@ -1713,6 +1735,30 @@ const KD_STAGES = [
 const KD_ORDER = Object.fromEntries(KD_STAGES.map((s,i)=>[s.k,i]));
 let KD_OFF = new Set(["flat"]);        // 기본으로 접어두는 단계
 
+// 단계를 가르는 두 문턱 — 2026-11-26 에 드롭다운을 없애고 값을 고정했다.
+//
+// 왜 고정했나 — 고를 수 있게 둔 탓에 오해와 불일치가 생겼다.
+//   1. 둘 다 '행을 걸러낸다'고 읽혔다. 실제로는 단계 이름만 바꾼다.
+//      행을 거르는 것은 위 툴바의 검색량·경쟁강도와 아래 단계 칩뿐이다.
+//   2. 배수 문턱을 1.5 로 바꾸면 단계는 1.5 로 갈라지는데, 출발 칸의 색·적중률은
+//      KD_BASE_BANDS 가 쓰는 1.3 기준 그대로였다. 두 칸이 다른 기준을 말했다.
+//   3. 바꿔서 좋아지는 설정이 없었다 (아래 측정).
+//
+// 1주 문턱을 80 으로 올린 근거 — 필터 통과 311종의 단계 분포
+//   문턱    🌱    🔥    📈    ⚠️    ➖
+//   +20     51    52    11    37   155
+//   +40     33    56    12    39   165
+//   +80     13    60    13    40   178
+//   +40 → +80 에서 빠지는 20종 중 13종(65%)이 ➖ 정체·하락으로 돌아간다.
+//   즉 +40~80 구간은 '순위만 튀고 검색은 안 느는' 것이 대부분이다.
+//   덤으로 🌱이 🔥를 덮는 사례가 11종 → 4종으로 줄었다. (🌱 판정이 최우선이라
+//   배수 67배인 저분자유청펩타이드hw3 가 '가장 이른 단계'로 표시되고 있었다)
+//
+// 배수 문턱 1.3 — 백테스트에서 lift 1.72x 를 잰 값이고, KD_BASE_BANDS 의
+//   높은 적중률(hi) 적용 조건도 같은 값이다. 둘을 상수 하나로 묶어 못 어긋나게 했다.
+const KD_W1_THR   = 80;
+const KD_MULT_THR = 1.3;
+
 // 표 컬럼 — f 가 있으면 눌러서 정렬할 수 있다. w 는 그리드 폭.
 const KD_COLS = [
   { f:"stage",  t:"단계",    w:"46px",             a:"asc"  },
@@ -1839,7 +1885,8 @@ const KD_BASE_BANDS = [
 function kdBaseBand(base, mult){
   if (base === null || base === undefined || base < KD_MIN_BASE) return null;
   const b = KD_BASE_BANDS.find(x => base < x.lt);
-  const hi = (mult === KD_NEW) || (typeof mult === "number" && mult >= 1.3);
+  // 1.3 을 직접 쓰지 않고 상수를 쓴다 — 단계 판정과 같은 문턱이어야 한다.
+  const hi = (mult === KD_NEW) || (typeof mult === "number" && mult >= KD_MULT_THR);
   return { ...b, rate: hi ? b.hi : b.p };
 }
 
@@ -1945,8 +1992,7 @@ function kdLine(act){
 }
 
 function kdBuild(){
-  const w1thr = +document.getElementById("kdW1").value;
-  const multThr = +document.getElementById("kdMult").value;
+  const w1thr = KD_W1_THR, multThr = KD_MULT_THR;
   const streaks = kdWeeksUp();
   const logHist = kdLogHist();          // 주차별 검색량·경쟁강도 (펼침 패널에서 쓴다)
 
@@ -2033,7 +2079,17 @@ function renderKeyword(){
   document.getElementById("kdMeta").innerHTML =
     `키워드 <b>${all.length}</b>종 · 월별 추이 ${withTrend}종 `
     + `<span style="color:var(--muted)">(나머지는 차트 수집 대기)</span>`;
-  document.getElementById("kdCount").textContent = `${rows.length}개`;
+  // '189개'만 적으면 무엇이 걸러진 건지 안 보인다 → 전체와 접혀서 숨은 수를 같이 적는다.
+  // 접힘 수는 '단계만 접혀서 빠진 것'이다 (검색량·경쟁은 이미 통과한 행).
+  const folded = all.filter(r =>
+       KD_OFF.has(r.stage)
+    && (!q || r.keyword.toLowerCase().includes(q))
+    && (!cat || r.cat === cat)
+    && (r.search || 0) >= minS
+    && (r.comp === null || r.comp === undefined || parseFloat(r.comp) <= maxC)).length;
+  document.getElementById("kdCount").innerHTML =
+    `${all.length}종 중 <b>${rows.length}개</b>`
+    + (folded ? ` <span style="color:var(--muted)">(단계 접힘 ${folded}종)</span>` : "");
 
   const GRID = KD_GRID;
   const num = v => Number(v||0).toLocaleString();
@@ -2179,7 +2235,7 @@ async function startApp(userLabel, isAdmin){
 // 탭을 옮겼다 돌아왔을 때, 그리고 새로고침한 뒤에도 조건·정렬·스크롤이 그대로이게 한다.
 const UI_KEY = "sd_ui_v1";
 const UI_FIELDS = ["qProduct","fChannel","fFrom","fTo",
-                   "kdQ","kdCat","kdSearch","kdComp","kdW1","kdMult"];
+                   "kdQ","kdCat","kdSearch","kdComp"];
 let UI_READY = false;
 
 function uiSave(){
@@ -2301,7 +2357,7 @@ document.getElementById("kdHelpOpen").onclick=(e)=>{
   if(d.open) d.scrollIntoView({behavior:"smooth",block:"nearest"});
 };
 document.getElementById("kdQ").addEventListener("input",renderKeyword);
-["kdCat","kdSearch","kdComp","kdW1","kdMult"].forEach(id=>
+["kdCat","kdSearch","kdComp"].forEach(id=>
   document.getElementById(id).addEventListener("change",renderKeyword));
 ["qProduct","fChannel","fFrom","fTo"].forEach(id=>document.getElementById(id).addEventListener("input",renderSchedule));
 // 날짜를 손으로 고치면 프리셋 강조는 풀어준다
