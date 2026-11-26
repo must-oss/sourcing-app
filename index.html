@@ -107,6 +107,14 @@
   #tipbox{position:fixed;z-index:200;background:#111827;color:#fff;padding:9px 11px;border-radius:7px;
     font-size:12px;font-weight:400;line-height:1.65;width:min(300px,72vw);text-align:left;
     box-shadow:0 6px 18px rgba(0,0,0,.22);pointer-events:none;display:none}
+  /* 키워드 표 머리글 — 스크롤해도 상단바·탭 바로 아래에 붙어 있게 한다.
+     행이 400개를 넘어서 "이게 배수였나" 하며 다시 올려 확인하는 일이 많았다.
+     top 은 상단바(46px) + 탭 높이를 JS 가 실측해 --kdtop 으로 넣는다 — 글꼴·줌에 따라
+     달라지므로 숫자를 박아두지 않는다. z-index 는 탭(9)보다 낮게 둬야 탭 위로 안 올라온다.
+     배경은 반드시 불투명(--soft #f4f6f8)이어야 아래 행이 비쳐 보이지 않는다. */
+  .kdhead{position:sticky;top:var(--kdtop,92px);z-index:5;background:var(--soft);
+    border-radius:8px;padding:7px 8px;font-size:12px;color:var(--muted);font-weight:600;
+    box-shadow:0 1px 0 var(--line),0 7px 11px -9px rgba(16,24,40,.3)}
   .kwlist{border:1px solid var(--line);border-radius:0 0 10px 10px;overflow:hidden;background:var(--card)}
   .kw{border-bottom:1px solid var(--line)}
   .kw:last-child{border-bottom:0}
@@ -1807,6 +1815,17 @@ function kdSetSort(f){
   renderKeyword();
 }
 
+// 머리글이 붙을 높이 — 상단바와 탭은 둘 다 sticky 라 그 아래부터 붙어야 가려지지 않는다.
+// 글꼴·브라우저 줌·창 너비에 따라 높이가 달라지므로 숫자를 박지 않고 실측한다.
+function kdSyncStickyTop(){
+  // 로그인 화면에서는 상단바·탭이 숨어 있어 offsetHeight 가 0 이다.
+  // 0 을 그대로 쓰면 머리글이 탭 아래로 숨으므로, 0 이면 기본값 46 을 쓴다.
+  const h = document.querySelector("header"), n = document.querySelector("nav.tabs");
+  const t = ((h && h.offsetHeight) || 46) + ((n && n.offsetHeight) || 46);
+  document.documentElement.style.setProperty("--kdtop", t + "px");
+}
+window.addEventListener("resize", kdSyncStickyTop);
+
 function kdAvg(a){ return a.reduce((x,y)=>x+y,0)/a.length; }
 
 // 배수를 숫자로 줄 최소 분모(직전 3개월 평균 검색수).
@@ -2190,8 +2209,8 @@ function renderKeyword(){
       title="눌러서 정렬">${c.t} <span style="opacity:${on?1:.45}">${arrow}</span></div>`;
   }).join("");
 
-  el.innerHTML = `<div style="display:grid;grid-template-columns:${GRID};gap:6px;padding:6px 8px;
-      background:var(--soft);border-radius:8px;font-size:12px;color:var(--muted);font-weight:600">
+  kdSyncStickyTop();
+  el.innerHTML = `<div class="kdhead" style="display:grid;grid-template-columns:${GRID};gap:6px">
       ${head}</div>`
     + (body || `<div class="empty">조건에 맞는 키워드가 없습니다.</div>`);
   el.querySelectorAll(".kdsort").forEach(h => h.onclick = () => kdSetSort(h.dataset.sort));
