@@ -369,7 +369,7 @@
                 (hw3단백질 — 배수 0.40, 1주 +217).</li>
           </ul>
 
-          <div style="font-weight:700;margin:16px 0 6px">출발 · 변동 · 유망
+          <div style="font-weight:700;margin:16px 0 6px">출발 · 변동
             <span style="color:var(--muted);font-weight:400;font-size:12px">· 2026-11-26 백테스트로 넣은 칸</span></div>
           <div style="background:var(--band);border-radius:8px;padding:10px 12px;margin-bottom:8px">
             <b>배수만 보고 높은 순으로 고르면 절반은 꼭지에서 들어갑니다.</b> 그걸 재서 확인했습니다.<br>
@@ -393,17 +393,94 @@
               <tr><td style="color:var(--muted)">배수 2.0 이상</td><td class="c">47.9%</td><td class="c">—</td><td class="c">2.21배</td></tr>
               <tr><td style="color:var(--muted)">배수 1.3 이상</td><td class="c">37.3%</td><td class="c">—</td><td class="c">1.72배</td></tr>
             </tbody></table></div>
+          <div style="background:var(--soft);border-radius:8px;padding:10px 12px;margin-bottom:8px">
+            <div style="font-weight:700;margin-bottom:4px">계산식 — 셋 다 최근 6개월만 쓴다</div>
+            <code style="font-size:13px;line-height:1.9">
+              출발 = 직전 3개월 평균<br>
+              배수 = 최근 3개월 평균 ÷ 직전 3개월 평균<br>
+              변동 = 6개월 표준편차 ÷ 6개월 평균
+            </code>
+            <div style="color:var(--muted);font-size:12px;margin-top:6px">
+              예) 비염삼백초 <code>290·250·140 | 130·1580·4800</code><br>
+              출발 = (290+250+140)÷3 = <b>227</b> ·
+              배수 = (130+1580+4800)÷3 ÷ 227 = <b>9.57</b> ·
+              변동 = 1,688 ÷ 1,198 = <b>1.41</b>
+            </div>
+          </div>
           <ul style="margin:8px 0 4px;padding-left:18px">
             <li><b>출발</b> — 배수의 <b>분모</b>, 즉 직전 3개월 평균 검색수입니다.
                 <b>이게 배수보다 강한 변수였습니다</b>(3.00배 vs 1.72배).
                 같은 배수 3배라도 <b>50 → 150</b> 과 <b>50,000 → 150,000</b> 은 뜻이 반대입니다.
-                앞은 막 올라오는 중이고, 뒤는 이미 다 올라온 뒤입니다.</li>
-            <li><b>변동</b> — 최근 6개월의 변동계수(표준편차÷평균). 0.6 이상이 <b>2.76배</b>로 좋게 나옵니다.
-                터지는 중인 키워드는 들쭉날쭉할 수밖에 없어서 그렇습니다.
-                <b>다만 같은 숫자가 "발주가 어렵다"는 뜻이기도 합니다</b> — 초도를 작게 가고 회전을 빨리 돌리는 게 맞습니다.</li>
-            <li><b>유망</b> — 위 표를 그대로 읽어 붙인 값입니다. <b>이 키워드의 확률이 아니라
-                같은 조건이었던 과거 키워드들의 비율</b>입니다. 등급으로 보셔야 합니다.</li>
+                앞은 막 올라오는 중이고, 뒤는 이미 다 올라온 뒤입니다.<br>
+                <span style="color:var(--muted)">색이 구간을 말합니다 —
+                <b style="color:var(--brand)">초록</b> 1,000 미만 ·
+                <b style="color:#c2410c">주황</b> 7,000 이상.
+                숫자에 마우스를 올리면 그 구간의 적중률이 뜹니다.
+                <b>정렬은 출발 오름차순</b>이 가장 촘촘합니다.</span></li>
+            <li><b>변동</b> — 최근 6개월의 변동계수. 쓰임이 둘인데 <b>두 번째가 본래 용도</b>입니다.
+              <div style="margin:4px 0 2px"><b>(1) 고를 때</b> — 단독으로는 2.76배지만 그 몫의 대부분이 출발과 겹칩니다.
+                변동 0.6 이상인 것의 86%가 배수 1.3 이상, 56%가 출발 1,133 미만입니다.
+                검색 3,000 미만은 명단에서 빠지니 <b>폭락해서 변동이 커진 키워드는 애초에 여기 없고</b>,
+                그래서 추세를 못 보는 지표인데도 결과적으로 상승을 가리킵니다.
+                출발을 고정하면 실제로 일하는 구간이 하나로 좁혀집니다 —
+                <b>출발 1,133~3,217 에서 29.6% → 50.0%</b>.
+                (출발 ~1,133 은 61.1% → 67.9% 로 조금, 출발 3,217 이상은 변동 높은 키워드가 거의 없습니다)</div>
+              <div><b>(2) 발주할 때</b> — 여기서는 추세를 안 보는 것이 오히려 맞습니다.
+                재고는 방향이 아니라 폭의 문제라, 오르든 내리든 들쭉날쭉하면 똑같이 틀립니다.
+                최근 6개월 평균으로 다음 달 수요를 잡았을 때 빗나가는 정도를 재보면:</div>
+              <div class="tablewrap" style="margin-top:4px"><table style="font-size:12px">
+                <thead><tr><th class="c" style="width:76px">변동</th><th class="c">평균 오차</th>
+                  <th class="c">최악의 달</th></tr></thead>
+                <tbody>
+                  <tr><td class="c">~0.3</td><td class="c">13%</td><td class="c">26%</td></tr>
+                  <tr><td class="c">0.3~0.6</td><td class="c">36%</td><td class="c">74%</td></tr>
+                  <tr><td class="c">0.6~1.0</td><td class="c">64%</td><td class="c">133%</td></tr>
+                  <tr><td class="c" style="color:#c2410c;font-weight:700">1.0~</td>
+                    <td class="c" style="color:#c2410c;font-weight:700">123%</td>
+                    <td class="c" style="color:#c2410c;font-weight:700">295%</td></tr>
+                </tbody></table></div>
+              <div style="margin-top:4px"><b>변동 1.0 이상이면 어떤 달은 예상의 4배가 나옵니다.</b>
+                평균에 맞춰 깔면 어느 달은 품절, 어느 달은 악성재고입니다 —
+                <b>초도를 작게 가고 회전을 빨리 돌리는 게 맞습니다.</b></div>
+            </li>
           </ul>
+          <div style="background:var(--band);border-radius:8px;padding:10px 12px;margin:8px 0 4px">
+            <b>두 칸을 묶어 읽는 법</b>
+            <div class="tablewrap" style="margin-top:4px"><table style="font-size:12px">
+              <thead><tr><th style="width:150px">조합</th><th class="c" style="width:58px">적중</th><th>어떻게 하나</th></tr></thead>
+              <tbody>
+                <tr><td><b>출발 작음 + 변동 높음</b></td><td class="c" style="color:var(--brand);font-weight:700">68%</td>
+                  <td>초기 폭발. 들어가되 <b>소량 자주</b> — 평균으로 발주하면 크게 빗나간다</td></tr>
+                <tr><td><b>출발 작음 + 변동 낮음</b></td><td class="c" style="font-weight:600">61%</td>
+                  <td>조용히 자라는 중. <b>발주가 편한 유형</b> (오차 13~36%)</td></tr>
+                <tr><td><b>출발 중간 + 변동 높음</b></td><td class="c" style="font-weight:600">50%</td>
+                  <td>변동 칸이 가장 일하는 자리 — 변동이 낮으면 29.6% 로 떨어진다</td></tr>
+                <tr><td><b>출발 큼 + 변동 낮음</b></td><td class="c" style="color:#c2410c">11%</td>
+                  <td>성숙한 키워드. 기준선 21.7% 의 절반이다</td></tr>
+              </tbody></table></div>
+          </div>
+          <div style="background:var(--soft);border-radius:8px;padding:10px 12px;margin:8px 0 4px">
+            <b>⚠️ 변동은 순서를 안 봅니다</b> — 혼자 보면 안 되는 이유입니다.<br>
+            <span style="color:var(--muted)">같은 여섯 값이면 오르든 내리든 V자든 변동이 똑같이 나옵니다.</span>
+            <div class="tablewrap" style="margin-top:6px"><table style="font-size:12px;white-space:nowrap">
+              <thead><tr><th>모양</th><th class="c" style="width:62px">변동</th>
+                <th class="c" style="width:62px">배수</th><th>값</th></tr></thead>
+              <tbody>
+                <tr><td>추세적 상승</td><td class="c">0.488</td><td class="c" style="color:var(--brand);font-weight:600">2.50</td><td><code>100 200 300 | 400 500 600</code></td></tr>
+                <tr><td>추세적 하락</td><td class="c">0.488</td><td class="c" style="color:#c2410c">0.40</td><td><code>600 500 400 | 300 200 100</code></td></tr>
+                <tr><td>V자 (내렸다 오름)</td><td class="c">0.488</td><td class="c">0.75</td><td><code>600 400 200 | 100 300 500</code></td></tr>
+                <tr><td>역V자 (올랐다 내림)</td><td class="c">0.488</td><td class="c">1.33</td><td><code>100 300 500 | 600 400 200</code></td></tr>
+              </tbody></table></div>
+            <div style="margin-top:6px">
+              칸마다 보는 것이 다릅니다 —
+              <b>배수</b>는 방향, <b>변동</b>은 폭(순서 무시),
+              <b>단계</b>는 끝부분 꺾임(<b>마지막 달 &lt; 두 달 전</b>이면 ⚠️ 고점·꺾임),
+              <b>12개월 추이</b>는 전체 모양입니다.<br>
+              <span style="color:var(--muted)">배수도 절반끼리만 비교하므로
+              <code>100 200 300 | 400 500 600</code> 과 <code>300 200 100 | 600 500 400</code> 은
+              배수·변동이 둘 다 같습니다. 그 차이는 단계와 꺾은선으로 봐야 합니다.</span>
+            </div>
+          </div>
           <div style="background:var(--soft);border-radius:8px;padding:10px 12px;margin:8px 0 4px">
             <b>⚠️ 아직 남은 한계</b><br>
             <span style="color:var(--muted)">신호가 떴다가 죽어서 명단에서 지워진 키워드는 표본에 아예 없습니다.
@@ -1648,10 +1725,9 @@ const KD_COLS = [
   { f:"search", t:"검색량",  w:"76px",  n:1, a:"desc" },
   { f:"comp",   t:"경쟁",    w:"56px",  n:1, a:"asc"  },   // 경쟁은 낮은 순부터
   { f:"mult",   t:"배수",    w:"54px",  n:1, a:"desc" },
-  // 아래 셋은 2026-11-26 백테스트로 근거를 잡고 넣은 칸이다. 수치는 kdProspect 주석에 있다.
+  // 아래 둘은 2026-11-26 백테스트로 근거를 잡고 넣은 칸이다. 수치는 KD_BASE_BANDS 주석에 있다.
   { f:"base",   t:"출발",    w:"66px",  n:1, a:"asc"  },   // 작은 쪽이 좋다 → 오름차순부터
   { f:"cv",     t:"변동",    w:"50px",  n:1, a:"desc" },
-  { f:"prosp",  t:"유망",    w:"54px",  n:1, a:"desc" },
   { f:"pred",   t:"이달예측", w:"82px", n:1, a:"desc" },
   {             t:"12개월 추이", w:"136px"                 },
   { f:"bcast",  t:"홈쇼핑",  w:"68px",  n:1, a:"desc" },
@@ -1675,7 +1751,6 @@ function kdVal(r, f){
     // 출발(분모)은 작은 쪽이 좋지만 '모름'을 위로 올리면 안 된다 → 모름은 맨 뒤로.
     case "base":   return (r.base === null || r.base === undefined) ? 1e12 : r.base;
     case "cv":     return (r.cv === null || r.cv === undefined) ? -1 : r.cv;
-    case "prosp":  return r.prosp ? r.prosp.p : -1;
     default:       return r[f] || 0;        // up1w / up1m / up6m / up1y
   }
 }
@@ -1697,6 +1772,26 @@ const KD_MIN_BASE = 50;
 // 변동계수 — 최근 6개월(배수를 내는 구간)의 표준편차 / 평균.
 // 재고관리 ABC-XYZ 의 XYZ 축과 같은 계산이다. 임계값은 남의 기준(10%/25%, 0.5/1.0)이
 // 서로 안 맞아서 우리 분포에서 잡았다 — 396종 중앙값 0.34 / 75% 0.70 -> 경계 0.6.
+//
+// ★ 순서를 보지 않는다. 같은 여섯 값이면 상승이든 하락이든 V자든 값이 같다.
+//   (100,200,...,600 과 600,500,...,100 둘 다 0.488)
+//   방향은 배수가, 끝부분 꺾임은 단계(lastM < twoAgo)가 본다.
+//
+// 쓰임이 둘인데 두 번째가 본래 용도다 (2026-11-26 측정).
+//  (1) 고를 때 — 단독 lift 2.76x 지만 대부분 출발과 겹친 몫이다.
+//      CV 0.6 이상인 것의 86% 가 배수 1.3 이상, 56% 가 출발 1133 미만.
+//      검색 3,000 미만이 명단에서 빠지니 '폭락해서 변동이 커진' 키워드가 애초에 없어서,
+//      추세를 못 보는 지표인데도 결과적으로 상승을 가리킨다.
+//      출발을 고정하면 실제로 갈리는 구간은 하나다:
+//        출발 ~1133     61.1% -> 67.9%   (조금)
+//        출발 1133~3217 29.6% -> 50.0%   (여기가 전부다)
+//        출발 3217~     변동 높은 표본이 n=10,18 로 없다
+//  (2) 발주할 때 — 여기서는 추세를 안 보는 것이 맞다. 재고는 방향이 아니라 폭의 문제다.
+//      최근 6개월 평균으로 다음 달을 잡았을 때 빗나가는 정도:
+//        CV ~0.3   평균오차  13% / 최악  26%
+//        CV 0.3~0.6        36% /      74%
+//        CV 0.6~1.0        64% /     133%
+//        CV 1.0~          123% /     295%   <- 어떤 달은 예상의 4배
 function kdCV(a){
   const m = kdAvg(a);
   if (!(m > 0)) return null;
@@ -1727,17 +1822,25 @@ function kdCV(a){
 //   카테고리 상대배수          상위 30 명단이 28종 동일 — 순서를 안 바꾼다.
 //
 // ※ 집단의 과거 비율이지 이 키워드 개인의 확률이 아니다. 등급으로 읽어야 한다.
-function kdProspect(mult, base){
-  if (base === null || base === undefined) return null;
-  // 분모 KD_MIN_BASE 미만은 백테스트에서 아예 빼고 쟀다(p0 < 50 제외).
-  // 측정 범위 밖이라 숫자를 주지 않는다 — 배수 칸이 '신규'로 비우는 것과 같은 이유다.
-  // 안 막으면 출발 0 인 키워드가 69% 를 받아 유망 정렬 맨 위를 차지한다.
-  if (base < KD_MIN_BASE) return null;
+//
+// '유망' 칸으로 따로 뽑았다가 뺐다(2026-11-26). 구간이 100% 출발로 정해지고
+// 배수는 구간 안에서 3~4%p 만 움직여서, 출발 칸을 한 번 더 쓴 것과 같았다.
+// 게다가 4단계라 202행이 12% 로 동점이 되어 정렬 키로도 출발보다 나빴다.
+// 적중률은 아래 표로 남겨 출발 칸의 색과 툴팁에서 쓴다.
+const KD_BASE_BANDS = [
+  { lt:1000,     p:65, hi:69, c:"var(--brand)", w:700, t:"아직 초기 — 가장 좋은 구간" },
+  { lt:3000,     p:33, hi:36, c:"inherit",      w:600, t:"올라오는 중" },
+  { lt:7000,     p:19, hi:22, c:"inherit",      w:400, t:"이미 어느 정도 큰 키워드" },
+  { lt:Infinity, p:12, hi:12, c:"#c2410c",      w:600, t:"이미 다 커졌다 — 기준선 21.7% 보다 나쁘다" },
+];
+
+// 출발이 속한 구간. 분모 KD_MIN_BASE 미만은 백테스트에서 아예 빼고 쟀으므로
+// (p0 < 50 제외) 측정 범위 밖이라 돌려주지 않는다 — 배수가 '신규'로 비우는 것과 같다.
+function kdBaseBand(base, mult){
+  if (base === null || base === undefined || base < KD_MIN_BASE) return null;
+  const b = KD_BASE_BANDS.find(x => base < x.lt);
   const hi = (mult === KD_NEW) || (typeof mult === "number" && mult >= 1.3);
-  if (base < 1000) return { p: hi ? 69 : 65, g:3 };
-  if (base < 3000) return { p: hi ? 36 : 33, g:2 };
-  if (base < 7000) return { p: hi ? 22 : 19, g:1 };
-  return { p:12, g:0 };
+  return { ...b, rate: hi ? b.hi : b.p };
 }
 
 // '신규'(비교할 과거가 없음)를 나타내는 값. 비율은 음수가 될 수 없으므로 안전하다.
@@ -1872,7 +1975,7 @@ function kdBuild(){
     const base = act && act.length >= 13 ? kdAvg(act.slice(-6,-3)) : null;
     const cv   = act && act.length >= 13 ? kdCV(act.slice(-6))     : null;
     return { ...s, act, view: act ? act.slice(1) : null, base, cv,
-             prosp: kdProspect(st.mult, base),
+             band: kdBaseBand(base, st.mult),
              vlab: lab.act.slice(1), stage: st.k, mult: st.mult, lab, wild,
              streak: streaks ? ((streaks[s.keyword] || {}).streak || 0) : null,
              hist: logHist[s.keyword] || [], compTrend: kdCompTrend(logHist[s.keyword]),
@@ -1968,18 +2071,22 @@ function renderKeyword(){
       <div class="num" style="color:var(--muted)">${esc(r.comp??"-")}</div>
       <div class="num" style="font-weight:600;color:${(r.mult===KD_NEW||r.mult>=1.3)?'var(--brand)':'inherit'}">
         ${r.mult===null||r.mult===undefined?"—":(r.mult===KD_NEW?"신규":r.mult.toFixed(2))}</div>
-      <div class="num" title="${r.base===null?'추이 미수집':'배수의 분모 — 직전 3개월 평균 검색수. 작을수록 아직 초기다'}"
-        style="${r.base===null?'color:var(--line)':r.base<1000?'color:var(--brand);font-weight:700'
-                :r.base>=7000?'color:#c2410c':'color:inherit'}">
+      <div class="num" title="${r.base===null ? '추이 미수집'
+          : (r.band ? '배수의 분모 — 직전 3개월 평균 검색수. '+r.band.t
+                     +'. 같은 구간이었던 과거 키워드 중 3개월 뒤 또 오른 비율 '+r.band.rate
+                     +'% (아무거나 집으면 21.7%). 집단 통계이고 이 키워드의 확률이 아니다'
+                    : '출발이 '+KD_MIN_BASE+' 미만이라 측정 범위 밖이다 — 비교할 과거가 없는 키워드다')}"
+        style="${r.base===null?'color:var(--line)'
+                :r.band?`color:${r.band.c};font-weight:${r.band.w}`:'color:var(--muted)'}">
         ${r.base===null?"—":num(Math.round(r.base))}</div>
-      <div class="num" title="${r.cv===null?'추이 미수집':'최근 6개월 변동계수. 0.6 이상은 아직 터지는 중이라는 뜻이고, 동시에 발주가 어렵다는 뜻이다'}"
+      <div class="num" title="${r.cv===null?'추이 미수집'
+          :'최근 6개월 변동계수(표준편차÷평균) — 순서는 안 본다. 평균의 '+Math.round(r.cv*100)+'% 만큼 흔들린다는 뜻. '
+           +(r.cv>=1.0?'6개월 평균으로 발주하면 어떤 달은 예상의 4배가 나온다(평균오차 123%)'
+            :r.cv>=0.6?'6개월 평균으로 발주하면 평균 64% 빗나간다 — 소량 자주가 맞다'
+            :r.cv>=0.3?'6개월 평균으로 발주하면 평균 36% 빗나간다'
+                      :'안정적이다 — 6개월 평균으로 발주해도 평균 13% 오차')}"
         style="${r.cv===null?'color:var(--line)':r.cv>=0.6?'color:var(--brand);font-weight:600':'color:var(--muted)'}">
         ${r.cv===null?"—":r.cv.toFixed(2)}</div>
-      <div class="num" title="${r.prosp?'같은 조건(출발 '+num(Math.round(r.base))+')이었던 과거 키워드 중 3개월 뒤 또 오른 비율 '+r.prosp.p+'%. 기준선 21.7%. 집단 통계이고 이 키워드의 확률이 아니다'
-          :(r.base===null?'추이 미수집 — 못 잼':'출발이 '+KD_MIN_BASE+' 미만이라 측정 범위 밖이다. 백테스트에서 이 구간은 빼고 쟀다 — 비교할 과거가 없는 키워드다')}"
-        style="${!r.prosp?'color:var(--line)':r.prosp.g===3?'color:var(--brand);font-weight:700'
-                :r.prosp.g===2?'color:inherit;font-weight:600':r.prosp.g===0?'color:#c2410c':'color:var(--muted)'}">
-        ${!r.prosp?"—":r.prosp.p+"%"}</div>
       <div class="num" style="color:${r.wild?'var(--muted)':'inherit'}">
         ${r.pred?num(r.pred)+(r.wild?" ⚠️":""):"—"}</div>
       <div>${r.view?kdLine(r.view):`<span style="color:var(--muted);font-size:12px">미수집</span>`}</div>
